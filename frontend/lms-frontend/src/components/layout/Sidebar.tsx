@@ -10,6 +10,7 @@ import {
   LogOut
 } from "lucide-react"
 import styles from "./Sidebar.module.css"
+import { clearStoredToken } from "../../state/authState"
 
 type Props = {
   collapsed: boolean
@@ -36,7 +37,7 @@ export default function Sidebar({
   ]
 
   const handleLogout = () => {
-    localStorage.removeItem("token")
+    clearStoredToken()
     navigate("/login")
   }
 

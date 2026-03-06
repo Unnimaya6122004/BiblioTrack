@@ -1,73 +1,17 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { jwtDecode } from "jwt-decode"
 
 import Button from "../../../components/ui/Button/Button"
 import Input from "../../../components/ui/Input/Input"
-
-interface JwtPayload {
-  role?: unknown
-  roles?: unknown
-  authorities?: unknown
-}
+import {
+  setStoredToken,
+  decodeToken,
+  extractRoleFromPayload
+} from "../../../state/authState"
 
 interface LoginResponse {
   token?: string
   message?: string
-}
-
-function normalizeRole(value: unknown): "ADMIN" | "MEMBER" | null {
-  if (typeof value !== "string") {
-    return null
-  }
-
-  const normalized = value.replace(/^ROLE_/, "").trim().toUpperCase()
-
-  if (normalized === "ADMIN") {
-    return "ADMIN"
-  }
-
-  if (normalized === "MEMBER" || normalized === "USER") {
-    return "MEMBER"
-  }
-
-  return null
-}
-
-function getFirstItem(value: unknown): unknown {
-  if (!Array.isArray(value) || value.length === 0) {
-    return undefined
-  }
-
-  return value[0]
-}
-
-function extractRole(payload: JwtPayload): "ADMIN" | "MEMBER" | null {
-  const roleFromRole = normalizeRole(payload.role)
-
-  if (roleFromRole) {
-    return roleFromRole
-  }
-
-  const roleFromRoles = normalizeRole(getFirstItem(payload.roles))
-
-  if (roleFromRoles) {
-    return roleFromRoles
-  }
-
-  const firstAuthority = getFirstItem(payload.authorities)
-
-  if (typeof firstAuthority === "object" && firstAuthority !== null && "authority" in firstAuthority) {
-    const roleFromAuthorityObject = normalizeRole(
-      (firstAuthority as { authority?: unknown }).authority
-    )
-
-    if (roleFromAuthorityObject) {
-      return roleFromAuthorityObject
-    }
-  }
-
-  return normalizeRole(firstAuthority)
 }
 
 export default function LoginForm() {
@@ -117,25 +61,16 @@ export default function LoginForm() {
         throw new Error("Token not found in login response")
       }
 
-      // store token
-      localStorage.setItem("token", token)
-
-      // only continue after token is successfully stored
-      const storedToken = localStorage.getItem("token")
-
-      if (!storedToken) {
-        throw new Error("Failed to store authentication token")
-      }
-
-      const payload = jwtDecode<JwtPayload>(storedToken)
+      const payload = decodeToken(token)
       console.log("JWT payload:", payload)
 
-      const role = extractRole(payload)
+      const role = extractRoleFromPayload(payload)
 
       if (!role) {
-        localStorage.removeItem("token")
         throw new Error("Unable to determine user role from token")
       }
+
+      setStoredToken(token)
 
       // redirect based on role
       if (role === "ADMIN") {

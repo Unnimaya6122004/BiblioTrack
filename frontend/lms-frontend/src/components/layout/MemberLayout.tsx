@@ -11,7 +11,6 @@ type Props = {
 
 export default function MemberLayout({ children }: Props) {
 
-  // Navbar requires these props
   const [collapsed, setCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 

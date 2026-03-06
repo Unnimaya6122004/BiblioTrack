@@ -1,34 +1,20 @@
 import { Menu, User } from "lucide-react"
 import { useState } from "react"
-import { jwtDecode } from "jwt-decode"
 import Modal from "../ui/Modal/Modal"
 import styles from "./DashboardNavbar.module.css"
 import responsive from "../../styles/responsive.module.css"
+import {
+  decodeToken,
+  extractEmailFromPayload,
+  extractRoleFromPayload,
+  getStoredToken
+} from "../../state/authState"
 
 type Props = {
   collapsed: boolean
   setCollapsed: (value: boolean) => void
   mobileMenuOpen: boolean
   setMobileMenuOpen: (value: boolean) => void
-}
-
-interface JwtPayload {
-  sub?: string
-  email?: string
-  role?: string
-  authorities?: unknown
-}
-
-function getRoleFromToken(payload: JwtPayload): string {
-  const authority = Array.isArray(payload.authorities) ? payload.authorities[0] : ""
-  const rawRole = payload.role || String(authority || "")
-  const normalized = rawRole.replace(/^ROLE_/, "").toUpperCase()
-
-  if (normalized === "USER") {
-    return "MEMBER"
-  }
-
-  return normalized || "MEMBER"
 }
 
 export default function MemberNavbar({
@@ -39,23 +25,10 @@ export default function MemberNavbar({
 }: Props) {
 
   const [openModal, setOpenModal] = useState(false)
-
-  // get user info from token
-  const token = localStorage.getItem("token")
-
-  let email = ""
-  let role = ""
-
-  if (token) {
-    try {
-      const payload = jwtDecode<JwtPayload>(token)
-      email = payload.sub || payload.email || ""
-      role = getRoleFromToken(payload)
-    } catch {
-      email = ""
-      role = "MEMBER"
-    }
-  }
+  const token = getStoredToken()
+  const payload = token ? decodeToken(token) : null
+  const email = extractEmailFromPayload(payload)
+  const role = extractRoleFromPayload(payload) ?? "MEMBER"
 
   const handleMenuClick = () => {
     const isDesktop = window.matchMedia("(min-width: 1024px)").matches
