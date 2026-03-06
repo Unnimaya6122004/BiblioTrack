@@ -1,0 +1,21 @@
+# Node
+node_modules/
+dist/
+build/
+
+# React / Vite
+.vite/
+
+# Environment files
+.env
+
+# Java / Spring Boot
+target/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

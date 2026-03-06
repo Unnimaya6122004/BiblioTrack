@@ -1,0 +1,8 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE books
+    ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE INDEX IF NOT EXISTS idx_users_deleted ON users(deleted);
+CREATE INDEX IF NOT EXISTS idx_books_deleted ON books(deleted);

@@ -1,0 +1,728 @@
+openapi: 3.0.3
+
+info:
+  title: Library Management System API
+  description: API documentation for LMS project
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local server
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Books
+  - name: Book Copies
+  - name: Loans
+  - name: Reservations
+  - name: Fines
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+
+  /users:
+    get:
+      summary: Get all users
+      tags: [Users]
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+
+    post:
+      summary: Create new user
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '200':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      tags: [Users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete user
+      tags: [Users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User deleted
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /books:
+    get:
+      summary: Get all books
+      tags: [Books]
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookResponse'
+
+    post:
+      summary: Add new book
+      tags: [Books]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCreateRequest'
+      responses:
+        '200':
+          description: Book created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookResponse'
+
+  /books/{id}:
+    get:
+      summary: Get book by ID
+      tags: [Books]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete book
+      tags: [Books]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book deleted
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /book-copies:
+    get:
+      summary: Get all book copies
+      tags: [Book Copies]
+      responses:
+        '200':
+          description: List of book copies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookCopyResponse'
+
+  /book-copies/{bookId}:
+    post:
+      summary: Add new book copy for a book
+      tags: [Book Copies]
+      parameters:
+        - in: path
+          name: bookId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCopyCreateRequest'
+      responses:
+        '200':
+          description: Book copy created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookCopyResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /book-copies/{id}:
+    delete:
+      summary: Delete book copy
+      tags: [Book Copies]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book copy deleted
+        '404':
+          description: Book copy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /loans:
+    get:
+      summary: Get all loans
+      tags: [Loans]
+      responses:
+        '200':
+          description: List of loans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoanResponse'
+
+    post:
+      summary: Issue book to user
+      tags: [Loans]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanCreateRequest'
+      responses:
+        '200':
+          description: Loan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanResponse'
+        '400':
+          description: Book copy is not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User or Book copy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /loans/{loanId}:
+    put:
+      summary: Return a book
+      tags: [Loans]
+      parameters:
+        - in: path
+          name: loanId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanResponse'
+        '400':
+          description: Loan is already returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Loan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reservations:
+    get:
+      summary: Get all reservations
+      tags: [Reservations]
+      responses:
+        '200':
+          description: List of reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationResponse'
+
+    post:
+      summary: Create reservation
+      tags: [Reservations]
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: bookId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '404':
+          description: User or Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reservations/{id}/status:
+    patch:
+      summary: Partially update reservation status
+      tags: [Reservations]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReservationStatusRequest'
+            example:
+              status: COMPLETED
+      responses:
+        '200':
+          description: Reservation status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '400':
+          description: Invalid status transition or invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Reservation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /fines:
+    get:
+      summary: Get all fines
+      tags: [Fines]
+      responses:
+        '200':
+          description: List of fines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FineResponse'
+
+  /fines/loan/{loanId}:
+    get:
+      summary: Get fines by loan ID
+      tags: [Fines]
+      parameters:
+        - in: path
+          name: loanId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of fines for a loan
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FineResponse'
+
+  /fines/user/{userId}/unpaid-total:
+    get:
+      summary: Get total unpaid fine for user
+      tags: [Fines]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Total unpaid fine amount
+          content:
+            application/json:
+              schema:
+                type: number
+                format: double
+
+  /fines/{id}/pay:
+    put:
+      summary: Pay fine
+      tags: [Fines]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Fine paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FineResponse'
+        '400':
+          description: Fine already paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Fine not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+
+    UserCreateRequest:
+      type: object
+      required: [fullName, email, passwordHash, role]
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        passwordHash:
+          type: string
+          format: password
+        role:
+          type: string
+          enum: [ADMIN, USER]
+        phone:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, BLOCKED]
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        phone:
+          type: string
+        status:
+          type: string
+
+    BookCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        isbn:
+          type: string
+
+    BookResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        isbn:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    BookRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        isbn:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    BookCopyCreateRequest:
+      type: object
+      required: [barcode]
+      properties:
+        barcode:
+          type: string
+        rackLocation:
+          type: string
+
+    BookCopyResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        book:
+          $ref: '#/components/schemas/BookRef'
+        barcode:
+          type: string
+        rackLocation:
+          type: string
+        status:
+          type: string
+          enum: [AVAILABLE, ISSUED, LOST, DAMAGED]
+
+    LoanCreateRequest:
+      type: object
+      required: [userId, bookCopyId]
+      properties:
+        userId:
+          type: integer
+        bookCopyId:
+          type: integer
+
+    LoanResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: string
+          format: email
+        bookId:
+          type: integer
+        bookTitle:
+          type: string
+        barcode:
+          type: string
+        issueDate:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        returnDate:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum: [ISSUED, RETURNED]
+
+    ReservationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        bookId:
+          type: integer
+        bookTitle:
+          type: string
+        reservationDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [ACTIVE, COMPLETED, CANCELLED]
+
+    UpdateReservationStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, COMPLETED, CANCELLED]
+
+    FineResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        loanId:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        amount:
+          type: number
+          format: double
+        issuedDate:
+          type: string
+          format: date
+        paidDate:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum: [UNPAID, PAID, WAIVED]
