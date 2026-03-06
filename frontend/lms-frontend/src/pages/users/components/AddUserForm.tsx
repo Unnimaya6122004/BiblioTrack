@@ -1,3 +1,5 @@
+import responsive from "../../../styles/responsive.module.css"
+
 type Props = {
   onClose: () => void
 }
@@ -74,7 +76,7 @@ export default function AddUserForm({ onClose }: Props) {
       </div>
 
       {/* Buttons */}
-      <div className="flex justify-end gap-3 pt-4">
+      <div className={responsive.formActions}>
 
         <button
           type="button"

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import Input from "../../../components/ui/Input/Input"
 import Button from "../../../components/ui/Button/Button"
+import responsive from "../../../styles/responsive.module.css"
 
 type Props = {
   onClose: () => void
@@ -79,7 +80,7 @@ export default function AddBookForm({ onClose }: Props) {
         />
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
+      <div className={responsive.formActions}>
 
         <Button type="button" onClick={onClose}>
           Cancel

@@ -1,13 +1,42 @@
 import { Menu, User } from "lucide-react"
 import { useState } from "react"
+import { jwtDecode } from "jwt-decode"
 import Modal from "../ui/Modal/Modal"
+import styles from "./DashboardNavbar.module.css"
+import responsive from "../../styles/responsive.module.css"
 
 type Props = {
   collapsed: boolean
   setCollapsed: (value: boolean) => void
+  mobileMenuOpen: boolean
+  setMobileMenuOpen: (value: boolean) => void
 }
 
-export default function MemberNavbar({ collapsed, setCollapsed }: Props) {
+interface JwtPayload {
+  sub?: string
+  email?: string
+  role?: string
+  authorities?: unknown
+}
+
+function getRoleFromToken(payload: JwtPayload): string {
+  const authority = Array.isArray(payload.authorities) ? payload.authorities[0] : ""
+  const rawRole = payload.role || String(authority || "")
+  const normalized = rawRole.replace(/^ROLE_/, "").toUpperCase()
+
+  if (normalized === "USER") {
+    return "MEMBER"
+  }
+
+  return normalized || "MEMBER"
+}
+
+export default function MemberNavbar({
+  collapsed,
+  setCollapsed,
+  mobileMenuOpen,
+  setMobileMenuOpen
+}: Props) {
 
   const [openModal, setOpenModal] = useState(false)
 
@@ -18,46 +47,62 @@ export default function MemberNavbar({ collapsed, setCollapsed }: Props) {
   let role = ""
 
   if (token) {
-    const payload = JSON.parse(atob(token.split(".")[1]))
-    email = payload.sub || payload.email
-    role = payload.role || payload.authorities?.[0] || "MEMBER"
+    try {
+      const payload = jwtDecode<JwtPayload>(token)
+      email = payload.sub || payload.email || ""
+      role = getRoleFromToken(payload)
+    } catch {
+      email = ""
+      role = "MEMBER"
+    }
+  }
+
+  const handleMenuClick = () => {
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches
+    if (isDesktop) {
+      setCollapsed(!collapsed)
+      return
+    }
+    setMobileMenuOpen(!mobileMenuOpen)
   }
 
   return (
     <>
-      <div className="h-16 bg-white border-b flex items-center justify-between px-6">
+      <div className={styles.navbar}>
+        <div className={`${styles.inner} ${responsive.container}`}>
 
-        <div className="flex items-center gap-4">
+          <div className={styles.leftSection}>
 
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-2 hover:bg-gray-100 rounded"
-          >
-            <Menu size={20} />
-          </button>
+            <button
+              onClick={handleMenuClick}
+              className={styles.menuButton}
+              aria-label="Toggle sidebar"
+            >
+              <Menu size={20} />
+            </button>
 
-          <h1 className="font-semibold text-lg">
-            Dashboard
-          </h1>
+            <h1 className={styles.title}>
+              Dashboard
+            </h1>
 
+          </div>
+
+          {/* Right Side */}
+          <div className={styles.rightSection}>
+
+            <span className={styles.welcomeText}>
+              Welcome, Member
+            </span>
+
+            <button
+              onClick={() => setOpenModal(true)}
+              className={styles.profileButton}
+            >
+              <User size={20} />
+            </button>
+
+          </div>
         </div>
-
-        {/* Right Side */}
-        <div className="flex items-center gap-4">
-
-          <span className="text-sm text-gray-600">
-            Welcome, Member
-          </span>
-
-          <button
-            onClick={() => setOpenModal(true)}
-            className="p-2 rounded-full hover:bg-gray-100"
-          >
-            <User size={20} />
-          </button>
-
-        </div>
-
       </div>
 
       {/* Profile Modal */}

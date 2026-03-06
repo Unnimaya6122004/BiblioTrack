@@ -2,6 +2,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout"
 import StatCard from "../../components/ui/StatCard/StatCard"
 import QuickActions from "./components/QuickActions"
 import SystemStatus from "./components/SystemStatus"
+import styles from "./DashboardPage.module.css"
 
 import {
   BookOpen,
@@ -22,7 +23,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-5 gap-6 mb-8">
+      <div className={styles.statsGrid}>
 
         <StatCard
           title="Total Books"
@@ -61,7 +62,7 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className={styles.secondaryGrid}>
         <QuickActions />
         <SystemStatus />
       </div>

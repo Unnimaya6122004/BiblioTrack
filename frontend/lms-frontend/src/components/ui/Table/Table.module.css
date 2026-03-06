@@ -1,0 +1,37 @@
+.wrapper {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.scrollContainer {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 42rem;
+}
+
+@media (max-width: 768px) {
+  .table {
+    min-width: 40rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .table {
+    min-width: 46rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .table {
+    min-width: 100%;
+  }
+}

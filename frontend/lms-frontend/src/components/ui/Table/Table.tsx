@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import styles from "./Table.module.css"
 
 type Column = {
   header: string
@@ -15,54 +16,56 @@ type TableProps = {
 
 export default function Table({ columns, data }: TableProps) {
   return (
-    <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+    <div className={styles.wrapper}>
 
-      <table className="w-full">
+      <div className={styles.scrollContainer}>
+        <table className={styles.table}>
 
-        {/* Table Head */}
-        <thead className="bg-gray-50 text-gray-500 text-sm uppercase">
-          <tr>
-            {columns.map((col) => (
-              <th key={col.accessor} className="text-left px-6 py-4">
-                {col.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        {/* Table Body */}
-        <tbody>
-
-          {data.length === 0 ? (
+          {/* Table Head */}
+          <thead className="bg-gray-50 text-gray-500 text-sm uppercase">
             <tr>
-              <td
-                colSpan={columns.length}
-                className="text-center py-16 text-gray-400"
-              >
-                No data found
-              </td>
+              {columns.map((col) => (
+                <th key={col.accessor} className="text-left px-6 py-4">
+                  {col.header}
+                </th>
+              ))}
             </tr>
-          ) : (
-            data.map((row, index) => (
-              <tr key={index} className="border-t hover:bg-gray-50">
+          </thead>
 
-                {columns.map((col) => (
-                  <td key={col.accessor} className="px-6 py-4">
+          {/* Table Body */}
+          <tbody>
 
-                    {col.render
-                      ? col.render(row)
-                      : String(row[col.accessor] ?? "")}
-
-                  </td>
-                ))}
-
+            {data.length === 0 ? (
+              <tr className="border-t hover:bg-gray-50">
+                <td
+                  colSpan={columns.length}
+                  className="text-center py-16 text-gray-400"
+                >
+                  No data found
+                </td>
               </tr>
-            ))
-          )}
+            ) : (
+              data.map((row, index) => (
+                <tr key={index} className="border-t hover:bg-gray-50">
 
-        </tbody>
+                  {columns.map((col) => (
+                    <td key={col.accessor} className="px-6 py-4">
 
-      </table>
+                      {col.render
+                        ? col.render(row)
+                        : String(row[col.accessor] ?? "")}
+
+                    </td>
+                  ))}
+
+                </tr>
+              ))
+            )}
+
+          </tbody>
+
+        </table>
+      </div>
 
     </div>
   )

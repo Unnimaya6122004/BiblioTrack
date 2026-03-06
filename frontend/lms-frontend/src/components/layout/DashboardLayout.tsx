@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import Sidebar from "./Sidebar"
 import DashboardNavbar from "./DashboardNavbar"
+import styles from "./DashboardLayout.module.css"
 
 type Props = {
   children: React.ReactNode
@@ -9,20 +10,27 @@ type Props = {
 export default function DashboardLayout({ children }: Props) {
 
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="flex">
+    <div className={styles.layout}>
 
-      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      <Sidebar
+        collapsed={collapsed}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+      />
 
-      <div className="flex-1">
+      <div className={styles.content}>
 
         <DashboardNavbar
           collapsed={collapsed}
           setCollapsed={setCollapsed}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
         />
 
-        <main className="p-6 bg-gray-50 min-h-screen">
+        <main className={styles.main}>
           {children}
         </main>
 

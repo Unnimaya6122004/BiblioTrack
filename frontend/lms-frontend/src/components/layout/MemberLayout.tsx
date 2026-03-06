@@ -3,6 +3,7 @@ import { useState } from "react"
 
 import MemberSidebar from "./MemberSidebar"
 import DashboardNavbar from "./MemberNavbar"
+import styles from "./DashboardLayout.module.css"
 
 type Props = {
   children: ReactNode
@@ -12,20 +13,27 @@ export default function MemberLayout({ children }: Props) {
 
   // Navbar requires these props
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="flex">
+    <div className={styles.layout}>
 
-      <MemberSidebar />
+      <MemberSidebar
+        collapsed={collapsed}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+      />
 
-      <div className="flex-1 bg-gray-50 min-h-screen">
+      <div className={styles.content}>
 
         <DashboardNavbar
           collapsed={collapsed}
           setCollapsed={setCollapsed}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
         />
 
-        <div className="p-8">
+        <div className={styles.main}>
           {children}
         </div>
 

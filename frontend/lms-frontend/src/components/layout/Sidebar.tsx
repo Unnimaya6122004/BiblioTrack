@@ -9,13 +9,19 @@ import {
   AlertTriangle,
   LogOut
 } from "lucide-react"
+import styles from "./Sidebar.module.css"
 
 type Props = {
   collapsed: boolean
-  setCollapsed: (value: boolean) => void
+  mobileMenuOpen: boolean
+  setMobileMenuOpen: (value: boolean) => void
 }
 
-export default function Sidebar({ collapsed }: Props) {
+export default function Sidebar({
+  collapsed,
+  mobileMenuOpen,
+  setMobileMenuOpen
+}: Props) {
 
   const navigate = useNavigate()
 
@@ -30,79 +36,98 @@ export default function Sidebar({ collapsed }: Props) {
   ]
 
   const handleLogout = () => {
+    localStorage.removeItem("token")
     navigate("/login")
   }
 
+  const handleNavClick = () => {
+    if (!window.matchMedia("(min-width: 1024px)").matches) {
+      setMobileMenuOpen(false)
+    }
+  }
+
+  const sidebarClassName = [
+    styles.sidebar,
+    mobileMenuOpen ? styles.mobileOpen : "",
+    collapsed ? styles.desktopCollapsed : ""
+  ]
+    .filter(Boolean)
+    .join(" ")
+
   return (
-    <div
-      className={`${
-        collapsed ? "w-20" : "w-64"
-      } min-h-screen bg-gray-900 text-white flex flex-col transition-all duration-300`}
-    >
-
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-700">
-
-        {!collapsed && (
-          <>
-            <h2 className="text-lg font-semibold">
-              Library Manager
-            </h2>
-
-            <p className="text-xs text-gray-400">
-              Admin Portal
-            </p>
-          </>
-        )}
-
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-
-        {menu.map((item) => {
-
-          const Icon = item.icon
-
-          return (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 p-2 rounded-md text-sm transition ${
-                  isActive
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                }`
-              }
-            >
-
-              <Icon size={18} />
-
-              {!collapsed && item.name}
-
-            </NavLink>
-          )
-        })}
-
-      </nav>
-
-      {/* Logout */}
-      <div className="p-4 border-t border-gray-700">
-
+    <>
+      {mobileMenuOpen && (
         <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 text-sm text-gray-300 hover:text-red-400 transition"
-        >
+          className={styles.overlay}
+          onClick={() => setMobileMenuOpen(false)}
+          aria-label="Close sidebar"
+        />
+      )}
 
-          <LogOut size={18} />
+      <aside className={sidebarClassName}>
 
-          {!collapsed && "Sign Out"}
+        {/* Logo */}
+        <div className={styles.logo}>
 
-        </button>
+          <h2 className={styles.logoTitle}>
+            Library Manager
+          </h2>
 
-      </div>
+          <p className={styles.logoSubTitle}>
+            Admin Portal
+          </p>
 
-    </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className={styles.nav}>
+
+          {menu.map((item) => {
+
+            const Icon = item.icon
+
+            return (
+              <NavLink
+                key={item.name}
+                to={item.path}
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `${styles.link} ${isActive ? styles.activeLink : ""}`
+                }
+              >
+
+                <Icon size={18} />
+
+                <span className={styles.linkText}>
+                  {item.name}
+                </span>
+
+              </NavLink>
+            )
+          })}
+
+        </nav>
+
+        {/* Logout */}
+        <div className={styles.logoutContainer}>
+
+          <button
+            onClick={handleLogout}
+            className={styles.logoutButton}
+          >
+
+            <LogOut size={18} />
+
+            <span className={styles.logoutText}>
+              Sign Out
+            </span>
+
+          </button>
+
+        </div>
+
+      </aside>
+    </>
+
   )
 }

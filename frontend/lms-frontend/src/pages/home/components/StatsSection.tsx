@@ -1,4 +1,6 @@
 import { BookOpen, Users, Clock, Library } from "lucide-react"
+import styles from "./StatsSection.module.css"
+import responsive from "../../../styles/responsive.module.css"
 
 export default function StatsSection() {
 
@@ -26,35 +28,37 @@ export default function StatsSection() {
   ]
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 text-center py-12 border-y gap-10">
+    <div className={styles.section}>
+      <div className={`${styles.statsGrid} ${responsive.container}`}>
 
-      {stats.map((stat) => {
+        {stats.map((stat) => {
 
-        const Icon = stat.icon
+          const Icon = stat.icon
 
-        return (
-          <div key={stat.label} className="flex flex-col items-center gap-3">
+          return (
+            <div key={stat.label} className={styles.card}>
 
-            {/* Icon */}
-            <Icon
-              size={28}
-              className="text-[#c17a2b]"
-            />
+              {/* Icon */}
+              <Icon
+                size={28}
+                className={styles.icon}
+              />
 
-            {/* Value */}
-            <div className="text-2xl font-semibold">
-              {stat.value}
+              {/* Value */}
+              <div className={styles.value}>
+                {stat.value}
+              </div>
+
+              {/* Label */}
+              <div className={styles.label}>
+                {stat.label}
+              </div>
+
             </div>
+          )
+        })}
 
-            {/* Label */}
-            <div className="text-gray-500 text-sm">
-              {stat.label}
-            </div>
-
-          </div>
-        )
-      })}
-
+      </div>
     </div>
   )
 }
