@@ -23,7 +23,7 @@ export default function Table({ columns, data }: TableProps) {
         <table className={styles.table}>
 
           {/* Table Head */}
-          <thead className="bg-gray-50 text-gray-500 text-sm uppercase">
+          <thead className={styles.head}>
             <tr>
               {columns.map((col) => (
                 <th key={col.accessor} className="text-left px-6 py-4">
@@ -37,7 +37,7 @@ export default function Table({ columns, data }: TableProps) {
           <tbody>
 
             {data.length === 0 ? (
-              <tr className="border-t hover:bg-gray-50">
+              <tr className={styles.row}>
                 <td
                   colSpan={columns.length}
                   className="text-center py-16 text-gray-400"
@@ -47,7 +47,7 @@ export default function Table({ columns, data }: TableProps) {
               </tr>
             ) : (
               data.map((row, index) => (
-                <tr key={index} className="border-t hover:bg-gray-50">
+                <tr key={index} className={styles.row}>
 
                   {columns.map((col) => (
                     <td key={col.accessor} className="px-6 py-4">
