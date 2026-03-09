@@ -10,7 +10,7 @@ import ScrollToTopButton from "../../components/ui/Button/ScrollToTopButton"
 
 export default function HomePage() {
   return (
-      <div className="relative min-h-screen overflow-hidden">
+      <div className="app-font relative min-h-screen overflow-hidden">
       
       <ParticlesBackground />
 

@@ -1,5 +1,6 @@
 import { jwtDecode } from "jwt-decode"
 export const TOKEN_STORAGE_KEY = "token"
+export const USER_ID_STORAGE_KEY = "user_id"
 
 export type UserRole = "ADMIN" | "MEMBER"
 
@@ -9,6 +10,8 @@ export interface JwtPayload {
   role?: unknown
   roles?: unknown
   authorities?: unknown
+  userId?: unknown
+  id?: unknown
 }
 
 function firstArrayItem(value: unknown): unknown {
@@ -104,6 +107,7 @@ export function clearStoredToken(): void {
   }
 
   localStorage.removeItem(TOKEN_STORAGE_KEY)
+  localStorage.removeItem(USER_ID_STORAGE_KEY)
 }
 
 export function extractEmailFromPayload(payload: JwtPayload | null): string {
@@ -119,4 +123,57 @@ export function extractEmailFromPayload(payload: JwtPayload | null): string {
   }
 
   return ""
+}
+
+function parsePositiveInteger(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    return value
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    if (Number.isInteger(parsed) && parsed > 0) {
+      return parsed
+    }
+  }
+
+  return null
+}
+
+export function extractUserIdFromPayload(payload: JwtPayload | null): number | null {
+  if (!payload) {
+    return null
+  }
+
+  const fromUserId = parsePositiveInteger(payload.userId)
+  if (fromUserId) {
+    return fromUserId
+  }
+
+  return parsePositiveInteger(payload.id)
+}
+
+export function getStoredUserId(): number | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+
+  const raw = localStorage.getItem(USER_ID_STORAGE_KEY)
+  return parsePositiveInteger(raw)
+}
+
+export function setStoredUserId(userId: number): void {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  localStorage.setItem(USER_ID_STORAGE_KEY, String(userId))
+}
+
+export function clearStoredUserId(): void {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  localStorage.removeItem(USER_ID_STORAGE_KEY)
 }

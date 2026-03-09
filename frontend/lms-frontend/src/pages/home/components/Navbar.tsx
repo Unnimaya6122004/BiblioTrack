@@ -9,7 +9,7 @@ export default function Navbar() {
       {/* Logo + Title */}
       <div className="flex items-center gap-3">
 
-        <div className="bg-[#2f5aa8] text-white p-2 rounded-md flex items-center justify-center">
+        <div className="bg-[#0f1f3d] text-white p-2 rounded-md flex items-center justify-center">
           <BookOpen size={20} />
         </div>
 

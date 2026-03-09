@@ -4,6 +4,11 @@
 html {
   scroll-behavior: smooth;
 }
+
+.app-font {
+  font-family: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
 @keyframes floatSlow {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-18px); }

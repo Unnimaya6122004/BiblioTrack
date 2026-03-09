@@ -12,21 +12,20 @@ type Story = StoryObj<typeof Button>
 
 export const Primary: Story = {
   args: {
-    children: "Primary Button",
-    variant: "primary",
+    children: "Primary Button"
   },
 }
 
 export const Secondary: Story = {
   args: {
     children: "Secondary Button",
-    variant: "secondary",
+    className: "bg-gray-700 hover:bg-gray-800"
   },
 }
 
 export const Danger: Story = {
   args: {
     children: "Delete Button",
-    variant: "danger",
+    className: "bg-red-600 hover:bg-red-700"
   },
 }

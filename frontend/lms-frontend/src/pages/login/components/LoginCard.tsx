@@ -1,19 +1,24 @@
 import LoginForm from "./LoginForm"
 import { BookOpen } from "lucide-react"
 
-export default function LoginCard() {
+type LoginCardProps = {
+  error: string
+  setError: (value: string) => void
+}
+
+export default function LoginCard({ error, setError }: LoginCardProps) {
   return (
     <div className="bg-white shadow-lg rounded-xl w-[420px] p-10">
 
       {/* Logo */}
       <div className="flex justify-center mb-6">
-        <div className="bg-[#2f5aa8] text-white p-4 rounded-xl shadow flex items-center justify-center">
+        <div className="bg-[#0f1f3d] text-white p-4 rounded-xl shadow flex items-center justify-center">
           <BookOpen size={28} />
         </div>
       </div>
 
       {/* Heading */}
-      <h2 className="text-2xl font-serif font-bold text-center">
+      <h2 className="text-2xl font-bold text-center">
         Welcome Back
       </h2>
 
@@ -22,7 +27,7 @@ export default function LoginCard() {
       </p>
 
       {/* Login Form */}
-      <LoginForm />
+      <LoginForm error={error} setError={setError} />
 
     </div>
   )

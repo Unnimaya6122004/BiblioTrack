@@ -14,7 +14,7 @@ export default function CTASection() {
       </p>
 
       <Link to="/login">
-  <Button className="bg-[#2f5aa8] text-white px-6 py-2 rounded hover:bg-[#274c90]">
+  <Button className="bg-[#0f1f3d] text-white px-6 py-2 rounded hover:bg-[#162a52]">
     Sign In
   </Button>
 </Link>

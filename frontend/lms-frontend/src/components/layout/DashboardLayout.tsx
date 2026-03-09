@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className={styles.layout}>
+    <div className={`${styles.layout} app-font`}>
 
       <Sidebar
         collapsed={collapsed}

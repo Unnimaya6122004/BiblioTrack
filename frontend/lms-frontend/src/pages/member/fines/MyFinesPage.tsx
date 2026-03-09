@@ -1,10 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import MemberLayout from "../../../components/layout/MemberLayout"
 import Table from "../../../components/ui/Table/Table"
 import Modal from "../../../components/ui/Modal/Modal"
+import { getFines, payFine, type FineDto } from "../../../api/lmsApi"
+import { toErrorMessage } from "../../../api/client"
+import { formatCurrency, formatDate } from "../../../utils/formatters"
+import { getLoggedInUser } from "../../../utils/currentUser"
 
-type Fine = {
+type FineRow = {
   id: number
   loanId: number
   amount: string
@@ -16,9 +20,75 @@ type Fine = {
 export default function MyFinesPage() {
 
   const [openModal, setOpenModal] = useState(false)
-  const [selectedFine, setSelectedFine] = useState<Fine | null>(null)
+  const [selectedFine, setSelectedFine] = useState<FineRow | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
+  const [fines, setFines] = useState<FineRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [paying, setPaying] = useState(false)
+  const [error, setError] = useState("")
 
-  const fines: Fine[] = []
+  const loadMyFines = async (knownUserId?: number) => {
+    try {
+      setLoading(true)
+      setError("")
+
+      let userId = knownUserId
+
+      if (!userId) {
+        const user = await getLoggedInUser()
+
+        if (!user) {
+          setFines([])
+          setError("Unable to resolve logged in user")
+          return
+        }
+
+        userId = user.id
+        setCurrentUserId(user.id)
+      }
+
+      const response = await getFines()
+      const myFines = response.content.filter((fine: FineDto) => fine.userId === userId)
+
+      setFines(
+        myFines.map((fine) => ({
+          id: fine.id,
+          loanId: fine.loanId,
+          amount: formatCurrency(fine.amount),
+          issued: formatDate(fine.issuedDate),
+          paid: formatDate(fine.paidDate),
+          status: fine.status
+        }))
+      )
+    } catch (requestError) {
+      setError(toErrorMessage(requestError, "Failed to load your fines"))
+      setFines([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadMyFines()
+  }, [])
+
+  const handlePayFine = async () => {
+    if (!selectedFine) {
+      return
+    }
+
+    try {
+      setPaying(true)
+      await payFine(selectedFine.id)
+      await loadMyFines(currentUserId ?? undefined)
+      setOpenModal(false)
+      setSelectedFine(null)
+    } catch (requestError) {
+      setError(toErrorMessage(requestError, "Failed to pay fine"))
+    } finally {
+      setPaying(false)
+    }
+  }
 
   const columns = [
     { header: "ID", accessor: "id" },
@@ -31,7 +101,11 @@ export default function MyFinesPage() {
       header: "Actions",
       accessor: "actions",
       render: (row: unknown) => {
-        const fine = row as Fine
+        const fine = row as FineRow
+
+        if (fine.status !== "UNPAID") {
+          return <span className="text-sm text-gray-400">No action</span>
+        }
 
         return (
           <button
@@ -53,7 +127,7 @@ export default function MyFinesPage() {
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-serif font-semibold">
+        <h1 className="text-2xl font-semibold">
           My Fines
         </h1>
 
@@ -61,6 +135,14 @@ export default function MyFinesPage() {
           View your overdue fines
         </p>
       </div>
+
+      {loading && (
+        <p className="mb-4 text-sm text-gray-500">Loading your fines...</p>
+      )}
+
+      {error && (
+        <p className="mb-4 text-sm text-red-600">{error}</p>
+      )}
 
       {/* Table */}
       <Table columns={columns} data={fines} />
@@ -76,26 +158,30 @@ export default function MyFinesPage() {
             </h2>
 
             <p className="text-gray-500 mb-6">
-              Scan the QR code to complete payment
+              Confirm payment for this fine.
             </p>
-
-            {/* QR Code Placeholder */}
-            <div className="flex justify-center mb-6">
-              <div className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                QR CODE
-              </div>
-            </div>
 
             <p className="text-lg font-semibold mb-6">
-              Amount: ₹{selectedFine.amount}
+              Amount: {selectedFine.amount}
             </p>
 
-            <button
-              onClick={() => setOpenModal(false)}
-              className="border px-4 py-2 rounded-lg"
-            >
-              Close
-            </button>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setOpenModal(false)}
+                disabled={paying}
+                className="border px-4 py-2 rounded-lg"
+              >
+                Close
+              </button>
+
+              <button
+                onClick={() => void handlePayFine()}
+                disabled={paying}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-70"
+              >
+                {paying ? "Paying..." : "Confirm Pay"}
+              </button>
+            </div>
 
           </div>
 

@@ -25,8 +25,9 @@ export default function HeroSection() {
 
         <h1 className="text-5xl md:text-6xl font-serif font-bold leading-tight mb-6">
           Where Every Book <br />
-          <span className="text-[#3b5b92]">Finds Its</span>{" "}
-          <span className="text-[#c17a2b]">Worm</span>
+          <span className="bg-gradient-to-r from-[#3b5b92] via-[#5f79aa] to-[#c17a2b] bg-clip-text text-transparent [text-shadow:0_0_14px_rgba(59,91,146,0.30),0_0_28px_rgba(193,122,43,0.22)]">
+            Finds Its Worm
+          </span>
         </h1>
 
         <p className="text-gray-600 max-w-xl mx-auto mb-8">

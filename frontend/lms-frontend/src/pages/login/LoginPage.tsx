@@ -1,9 +1,12 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import LoginCard from "./components/LoginCard"
 
 export default function LoginPage() {
+  const [error, setError] = useState("")
+
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0f172a]">
+    <div className="app-font relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0f172a]">
 
       {/* Soft background glow */}
       <div className="absolute top-32 right-32 w-96 h-96 bg-blue-500/20 blur-3xl rounded-full"></div>
@@ -43,7 +46,7 @@ export default function LoginPage() {
 
       {/* Login Card */}
       <div className="relative z-10 transition-transform duration-300 hover:scale-[1.02]">
-        <LoginCard />
+        <LoginCard error={error} setError={setError} />
       </div>
 
     </div>

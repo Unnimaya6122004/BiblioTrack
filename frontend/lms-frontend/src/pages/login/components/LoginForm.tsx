@@ -3,10 +3,15 @@ import { useNavigate } from "react-router-dom"
 
 import Button from "../../../components/ui/Button/Button"
 import Input from "../../../components/ui/Input/Input"
+import { API_BASE_URL } from "../../../utils/api"
+import { findUserByEmail } from "../../../api/lmsApi"
 import {
+  clearStoredUserId,
   setStoredToken,
+  setStoredUserId,
   decodeToken,
-  extractRoleFromPayload
+  extractRoleFromPayload,
+  extractUserIdFromPayload
 } from "../../../state/authState"
 
 interface LoginResponse {
@@ -14,7 +19,12 @@ interface LoginResponse {
   message?: string
 }
 
-export default function LoginForm() {
+type LoginFormProps = {
+  error: string
+  setError: (value: string) => void
+}
+
+export default function LoginForm({ error, setError }: LoginFormProps) {
 
   const navigate = useNavigate()
 
@@ -28,9 +38,10 @@ export default function LoginForm() {
     try {
 
       setLoading(true)
+      setError("")
 
       const response = await fetch(
-        "http://localhost:8081/api/v1/auth/login",
+        `${API_BASE_URL}/auth/login`,
         {
           method: "POST",
           headers: {
@@ -58,7 +69,7 @@ export default function LoginForm() {
       const token = data.token
 
       if (!token) {
-        throw new Error("Token not found in login response")
+        throw new Error("Invalid email or password")
       }
 
       const payload = decodeToken(token)
@@ -67,10 +78,28 @@ export default function LoginForm() {
       const role = extractRoleFromPayload(payload)
 
       if (!role) {
-        throw new Error("Unable to determine user role from token")
+        throw new Error("Invalid email or password")
       }
 
       setStoredToken(token)
+      setError("")
+
+      const userIdFromToken = extractUserIdFromPayload(payload)
+
+      if (userIdFromToken) {
+        setStoredUserId(userIdFromToken)
+      } else {
+        try {
+          const user = await findUserByEmail(email.trim())
+          if (user) {
+            setStoredUserId(user.id)
+          } else {
+            clearStoredUserId()
+          }
+        } catch {
+          clearStoredUserId()
+        }
+      }
 
       // redirect based on role
       if (role === "ADMIN") {
@@ -80,11 +109,9 @@ export default function LoginForm() {
       }
 
     } catch (error) {
-
       console.error("Login error:", error)
-      const message =
-        error instanceof Error ? error.message : "Login failed. Check your credentials."
-      alert(message)
+      setError("Invalid email or password")
+      clearStoredUserId()
 
     } finally {
       setLoading(false)
@@ -124,6 +151,12 @@ export default function LoginForm() {
           placeholder="••••••••"
         />
       </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-100 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Button */}
       <Button className="w-full" disabled={loading}>

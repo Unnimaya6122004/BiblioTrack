@@ -15,7 +15,7 @@ export default function MemberLayout({ children }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className={styles.layout}>
+    <div className={`${styles.layout} app-font`}>
 
       <MemberSidebar
         collapsed={collapsed}

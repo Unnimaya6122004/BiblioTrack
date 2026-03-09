@@ -12,15 +12,13 @@ type Story = StoryObj<typeof Input>
 
 export const Default: Story = {
   args: {
-    label: "Username",
-    placeholder: "Enter username",
+    placeholder: "Enter username"
   },
 }
 
 export const Password: Story = {
   args: {
-    label: "Password",
     placeholder: "Enter password",
-    type: "password",
-  },
+    type: "password"
+  }
 }

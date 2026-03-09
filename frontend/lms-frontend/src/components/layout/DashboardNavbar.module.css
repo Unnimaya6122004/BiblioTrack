@@ -97,3 +97,47 @@
     gap: 1rem;
   }
 }
+.navbar {
+  width: 100%;
+  height: 64px;
+
+  /* Same color family as sidebar */
+  background: linear-gradient(
+    90deg,
+    #0f1f3d 0%,
+    #0c1a33 50%,
+    #08152b 100%
+  );
+
+  color: white;
+
+  display: flex;
+  align-items: center;
+
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+
+  backdrop-filter: blur(6px);
+}
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.welcomeText {
+  font-size: 14px;
+  color: rgba(255,255,255,0.85);
+}
+.profileButton {
+  color: white;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.profileButton:hover {
+  background: rgba(255,255,255,0.12);
+}
+.navbar {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}

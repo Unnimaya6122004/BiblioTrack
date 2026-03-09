@@ -1,9 +1,11 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import MemberLayout from "../../../components/layout/MemberLayout"
 import Table from "../../../components/ui/Table/Table"
+import { getBooks, type BookDto } from "../../../api/lmsApi"
+import { toErrorMessage } from "../../../api/client"
 
-type Book = {
+type BookRow = {
   id: number
   title: string
   isbn: string
@@ -12,8 +14,34 @@ type Book = {
 export default function BrowseBooksPage() {
 
   const [search, setSearch] = useState("")
+  const [books, setBooks] = useState<BookRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const books: Book[] = []
+  useEffect(() => {
+    const loadBooks = async () => {
+      try {
+        setLoading(true)
+        setError("")
+
+        const response = await getBooks()
+        setBooks(
+          response.content.map((book: BookDto) => ({
+            id: book.id,
+            title: book.title,
+            isbn: book.isbn ?? "-"
+          }))
+        )
+      } catch (requestError) {
+        setError(toErrorMessage(requestError, "Failed to load books"))
+        setBooks([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadBooks()
+  }, [])
 
   const columns = [
     { header: "ID", accessor: "id" },
@@ -21,9 +49,17 @@ export default function BrowseBooksPage() {
     { header: "ISBN", accessor: "isbn" }
   ]
 
-  const filteredBooks = books.filter((book) =>
-    book.title.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredBooks = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+
+    if (!normalizedSearch) {
+      return books
+    }
+
+    return books.filter((book) =>
+      book.title.toLowerCase().includes(normalizedSearch)
+    )
+  }, [books, search])
 
   return (
     <MemberLayout>
@@ -31,7 +67,7 @@ export default function BrowseBooksPage() {
       {/* Header */}
       <div className="mb-8">
 
-        <h1 className="text-2xl font-serif font-semibold">
+        <h1 className="text-2xl font-semibold">
           Browse Books
         </h1>
 
@@ -53,6 +89,14 @@ export default function BrowseBooksPage() {
         />
 
       </div>
+
+      {loading && (
+        <p className="mb-4 text-sm text-gray-500">Loading books...</p>
+      )}
+
+      {error && (
+        <p className="mb-4 text-sm text-red-600">{error}</p>
+      )}
 
       {/* Table */}
       <Table columns={columns} data={filteredBooks} />

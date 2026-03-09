@@ -1,32 +1,92 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Input from "../../../components/ui/Input/Input"
 import Button from "../../../components/ui/Button/Button"
+import { createBook, updateBook } from "../../../api/lmsApi"
+import { toErrorMessage } from "../../../utils/api"
 import responsive from "../../../styles/responsive.module.css"
+
+type EditableBook = {
+  id: number
+  title: string
+  isbn: string
+}
 
 type Props = {
   onClose: () => void
+  onCreated?: () => Promise<void> | void
+  editingBook?: EditableBook | null
 }
 
-export default function AddBookForm({ onClose }: Props) {
+function parseIdList(value: string): number[] {
+  if (!value.trim()) {
+    return []
+  }
+
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item > 0)
+}
+
+export default function AddBookForm({ onClose, onCreated, editingBook }: Props) {
 
   const [title, setTitle] = useState("")
   const [isbn, setIsbn] = useState("")
-  const [author, setAuthor] = useState("")
-  const [category, setCategory] = useState("")
+  const [authorIds, setAuthorIds] = useState("")
+  const [categoryIds, setCategoryIds] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    const newBook = {
-      title,
-      isbn,
-      author,
-      category
+  useEffect(() => {
+    if (editingBook) {
+      setTitle(editingBook.title)
+      setIsbn(editingBook.isbn)
+      setAuthorIds("")
+      setCategoryIds("")
+      return
     }
 
-    console.log("Book to add:", newBook)
+    setTitle("")
+    setIsbn("")
+    setAuthorIds("")
+    setCategoryIds("")
+  }, [editingBook])
 
-    onClose()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const payload = {
+      title: title.trim(),
+      isbn: isbn.trim() || undefined,
+      authorIds: parseIdList(authorIds),
+      categoryIds: parseIdList(categoryIds)
+    }
+
+    try {
+      setLoading(true)
+      setError("")
+
+      if (editingBook) {
+        await updateBook(editingBook.id, payload)
+      } else {
+        await createBook(payload)
+      }
+
+      if (onCreated) {
+        await onCreated()
+      }
+
+      onClose()
+    } catch (requestError) {
+      setError(
+        toErrorMessage(
+          requestError,
+          editingBook ? "Failed to update book" : "Failed to create book"
+        )
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -41,18 +101,7 @@ export default function AddBookForm({ onClose }: Props) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Book title"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm text-gray-600">
-          Author
-        </label>
-
-        <Input
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          placeholder="Author name"
+          required
         />
       </div>
 
@@ -70,24 +119,45 @@ export default function AddBookForm({ onClose }: Props) {
 
       <div>
         <label className="text-sm text-gray-600">
-          Category
+          Author IDs
         </label>
 
         <Input
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          placeholder="Category"
+          value={authorIds}
+          onChange={(e) => setAuthorIds(e.target.value)}
+          placeholder="Example: 1,2"
         />
       </div>
 
+      <div>
+        <label className="text-sm text-gray-600">
+          Category IDs
+        </label>
+
+        <Input
+          value={categoryIds}
+          onChange={(e) => setCategoryIds(e.target.value)}
+          placeholder="Example: 1,3"
+        />
+      </div>
+
+      {error && (
+        <p className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
+
       <div className={responsive.formActions}>
 
-        <Button type="button" onClick={onClose}>
+        <Button type="button" onClick={onClose} disabled={loading}>
           Cancel
         </Button>
 
-        <Button type="submit">
-          Add Book
+        <Button type="submit" disabled={loading}>
+          {loading
+            ? editingBook ? "Updating..." : "Adding..."
+            : editingBook ? "Update Book" : "Add Book"
+          }
         </Button>
 
       </div>
