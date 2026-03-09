@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import styles from "./Table.module.css"
+import StatusBadge from "../StatusBadge"
 
 type Column = {
   header: string
@@ -53,7 +54,9 @@ export default function Table({ columns, data }: TableProps) {
 
                       {col.render
                         ? col.render(row)
-                        : String(row[col.accessor] ?? "")}
+                        : col.accessor === "status"
+                          ? <StatusBadge status={String(row[col.accessor] ?? "")} />
+                          : String(row[col.accessor] ?? "")}
 
                     </td>
                   ))}
