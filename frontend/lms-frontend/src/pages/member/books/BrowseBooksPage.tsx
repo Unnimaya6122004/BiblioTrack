@@ -4,6 +4,7 @@ import MemberLayout from "../../../components/layout/MemberLayout"
 import Table from "../../../components/ui/Table/Table"
 import { getBooks, type BookDto } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
+import useDebouncedValue from "../../../hooks/useDebouncedValue"
 
 type BookRow = {
   id: number
@@ -17,6 +18,7 @@ export default function BrowseBooksPage() {
   const [books, setBooks] = useState<BookRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const debouncedSearch = useDebouncedValue(search)
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -50,7 +52,7 @@ export default function BrowseBooksPage() {
   ]
 
   const filteredBooks = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
+    const normalizedSearch = debouncedSearch.trim().toLowerCase()
 
     if (!normalizedSearch) {
       return books
@@ -59,7 +61,7 @@ export default function BrowseBooksPage() {
     return books.filter((book) =>
       book.title.toLowerCase().includes(normalizedSearch)
     )
-  }, [books, search])
+  }, [books, debouncedSearch])
 
   return (
     <MemberLayout>

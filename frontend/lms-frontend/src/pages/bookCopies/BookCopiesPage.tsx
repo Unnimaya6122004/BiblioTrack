@@ -8,6 +8,7 @@ import Modal from "../../components/ui/Modal/Modal"
 import ConfirmModal from "../../components/ui/Modal/ConfirmModal"
 import { deleteBookCopy, getBookCopies, type BookCopyDto } from "../../api/lmsApi"
 import { toErrorMessage } from "../../utils/api"
+import useDebouncedValue from "../../hooks/useDebouncedValue"
 
 type CopyRow = {
   id: number
@@ -26,6 +27,7 @@ export default function BookCopiesPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
+  const debouncedSearch = useDebouncedValue(search)
 
   const loadCopies = async () => {
     try {
@@ -59,7 +61,7 @@ export default function BookCopiesPage() {
   }, [page])
 
   const filteredCopies = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
+    const normalizedSearch = debouncedSearch.trim().toLowerCase()
 
     if (!normalizedSearch) {
       return copies
@@ -68,7 +70,7 @@ export default function BookCopiesPage() {
     return copies.filter((copy) =>
       copy.barcode.toLowerCase().includes(normalizedSearch)
     )
-  }, [copies, search])
+  }, [copies, debouncedSearch])
 
   const handleDelete = async (id: number) => {
     try {

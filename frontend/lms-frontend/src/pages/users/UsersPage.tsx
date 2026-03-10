@@ -9,6 +9,7 @@ import ConfirmModal from "../../components/ui/Modal/ConfirmModal"
 import AddUserForm from "./components/AddUserForm"
 import { deleteUser, getUsers, mapRoleForUi, type UserDto } from "../../api/lmsApi"
 import { toErrorMessage } from "../../utils/api"
+import useDebouncedValue from "../../hooks/useDebouncedValue"
 import {
   decodeToken,
   extractUserIdFromPayload,
@@ -37,6 +38,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<UserRow | null>(null)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
+  const debouncedSearch = useDebouncedValue(search)
 
   const token = getStoredToken()
   const payload = token ? decodeToken(token) : null
@@ -77,7 +79,7 @@ export default function UsersPage() {
   }, [page])
 
   const filteredUsers = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
+    const normalizedSearch = debouncedSearch.trim().toLowerCase()
 
     if (!normalizedSearch) {
       return users
@@ -86,7 +88,7 @@ export default function UsersPage() {
     return users.filter((user) =>
       user.fullName.toLowerCase().includes(normalizedSearch)
     )
-  }, [search, users])
+  }, [debouncedSearch, users])
 
   const handleDelete = async (id: number) => {
     if (!isAdmin) {

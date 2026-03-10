@@ -18,6 +18,7 @@ import {
 } from "../../api/lmsApi"
 import { toErrorMessage } from "../../utils/api"
 import { formatDate } from "../../utils/formatters"
+import useDebouncedValue from "../../hooks/useDebouncedValue"
 import {
   decodeToken,
   extractRoleFromPayload,
@@ -46,6 +47,7 @@ export default function BooksPage() {
   const [categories, setCategories] = useState<CategoryDto[]>([])
   const [selectedAuthor, setSelectedAuthor] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
+  const debouncedSearch = useDebouncedValue(search)
 
   const token = getStoredToken()
   const role = extractRoleFromPayload(token ? decodeToken(token) : null)
@@ -57,7 +59,7 @@ export default function BooksPage() {
       setError("")
 
       const response = await getBooks({
-        title: search.trim() || undefined,
+        title: debouncedSearch.trim() || undefined,
         author: selectedAuthor || undefined,
         category: selectedCategory || undefined,
         page,
@@ -105,7 +107,7 @@ export default function BooksPage() {
 
   useEffect(() => {
     void loadBooks()
-  }, [page, search, selectedAuthor, selectedCategory])
+  }, [debouncedSearch, page, selectedAuthor, selectedCategory])
 
   const handleDelete = async (id: number) => {
     if (!isAdmin) {
