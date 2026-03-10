@@ -1,8 +1,10 @@
 .sidebar {
+  --sidebar-width: 16rem;
   position: fixed;
   top: 0;
   left: 0;
   z-index: 40;
+  overflow: hidden;
   min-height: 100vh;
   width: 16rem;
   background: #111827;
@@ -10,7 +12,7 @@
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
-  transition: transform 0.3s ease, width 0.3s ease;
+  transition: transform 0.3s ease, width 0.12s ease-out;
 }
 
 .mobileOpen {
@@ -20,6 +22,17 @@
 .logo {
   padding: 1rem;
   border-bottom: 1px solid #374151;
+}
+
+.logoHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.logoTextGroup {
+  min-width: 0;
 }
 
 .logoTitle {
@@ -94,6 +107,53 @@
   white-space: nowrap;
 }
 
+.collapseButton {
+  display: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 0.5rem;
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.collapseButton:hover {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: rgba(148, 163, 184, 0.55);
+}
+
+.resizeHandle {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.resizeHandle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 3px;
+  width: 2px;
+  height: 100%;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.resizeHandle:hover::after {
+  background: rgba(148, 163, 184, 0.55);
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: min(80vw, 20rem);
@@ -108,19 +168,55 @@
 
 @media (min-width: 1024px) {
   .sidebar {
-    position: static;
+    position: relative;
     transform: none;
-    width: 16rem;
+    width: var(--sidebar-width);
   }
 
-  .desktopCollapsed {
-    width: 5rem;
+  .collapseButton {
+    display: inline-flex;
   }
 
-  .desktopCollapsed .logoTitle,
-  .desktopCollapsed .logoSubTitle,
+  .resizeHandle {
+    display: block;
+  }
+
+  .desktopCollapsed .logo {
+    min-height: 4rem;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid #374151;
+  }
+
+  .desktopCollapsed .logoHeader {
+    justify-content: center;
+  }
+
+  .desktopCollapsed .logoTextGroup,
   .desktopCollapsed .linkText,
   .desktopCollapsed .logoutText {
+    display: none;
+  }
+
+  .desktopCollapsed .nav {
+    padding: 1rem 0.5rem;
+  }
+
+  .desktopCollapsed .link {
+    justify-content: center;
+    gap: 0;
+    padding: 0.625rem;
+  }
+
+  .desktopCollapsed .logoutContainer {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .desktopCollapsed .logoutButton {
+    justify-content: center;
+    gap: 0;
+  }
+
+  .desktopCollapsed .resizeHandle {
     display: none;
   }
 

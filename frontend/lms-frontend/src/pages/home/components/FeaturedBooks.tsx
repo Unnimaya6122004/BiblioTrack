@@ -34,44 +34,44 @@ export default function FeaturedBooks() {
   ]
 
   return (
-    <div id ="featured" className="py-20 px-10">
+    <section id="featured" className="py-16 px-4 sm:px-6 lg:px-10">
 
       <h2 className="text-3xl font-semibold text-center mb-2">
         Featured Collection
       </h2>
 
-      <p className="text-center text-gray-500 mb-12">
+      <p className="text-center text-gray-500 mb-10 max-w-2xl mx-auto">
         Discover some of the most beloved books in our catalog
       </p>
 
-      <div className="grid grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 
         {books.map((book) => (
-          <div key={book.title} className="group">
+          <article key={book.title} className="group">
 
             <img
               src={book.img}
               alt={book.title}
-              className="h-52 w-full object-cover rounded-lg shadow"
+              className="h-56 w-full object-cover rounded-xl shadow"
             />
 
             <div className="mt-3">
 
-              <p className="font-semibold">
+              <p className="font-semibold leading-tight">
                 {book.title}
               </p>
 
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 mt-1">
                 {book.author}
               </p>
 
             </div>
 
-          </div>
+          </article>
         ))}
 
       </div>
 
-    </div>
+    </section>
   )
 }

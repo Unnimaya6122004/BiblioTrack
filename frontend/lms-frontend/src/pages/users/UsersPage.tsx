@@ -11,7 +11,9 @@ import { deleteUser, getUsers, mapRoleForUi, type UserDto } from "../../api/lmsA
 import { toErrorMessage } from "../../utils/api"
 import {
   decodeToken,
+  extractUserIdFromPayload,
   extractRoleFromPayload,
+  getStoredUserId,
   getStoredToken
 } from "../../state/authState"
 
@@ -37,7 +39,9 @@ export default function UsersPage() {
   const [totalPages, setTotalPages] = useState(0)
 
   const token = getStoredToken()
-  const role = extractRoleFromPayload(token ? decodeToken(token) : null)
+  const payload = token ? decodeToken(token) : null
+  const role = extractRoleFromPayload(payload)
+  const currentAdminUserId = getStoredUserId() ?? extractUserIdFromPayload(payload)
   const isAdmin = role === "ADMIN"
 
   const loadUsers = async () => {
@@ -89,6 +93,12 @@ export default function UsersPage() {
       return
     }
 
+    if (currentAdminUserId !== null && id === currentAdminUserId) {
+      setError("You cannot delete your own admin account.")
+      setDeleteId(null)
+      return
+    }
+
     try {
       await deleteUser(id)
       await loadUsers()
@@ -131,6 +141,19 @@ export default function UsersPage() {
 
         return (
           <div className="flex gap-3">
+            {currentAdminUserId !== null && user.id === currentAdminUserId ? (
+              <span className="text-sm text-gray-400">Current admin</span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setDeleteId(user.id)}
+                className="text-red-500 hover:text-red-700"
+                aria-label={`Delete user ${user.fullName}`}
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => openEditModal(user)}
@@ -138,15 +161,6 @@ export default function UsersPage() {
               aria-label={`Edit user ${user.fullName}`}
             >
               <Pencil size={18} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setDeleteId(user.id)}
-              className="text-red-500 hover:text-red-700"
-              aria-label={`Delete user ${user.fullName}`}
-            >
-              <Trash2 size={18} />
             </button>
           </div>
         )

@@ -1,7 +1,18 @@
 .navbar {
-  height: 4rem;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  width: 100%;
+  height: 64px;
+  background: linear-gradient(
+    90deg,
+    #0f1f3d 0%,
+    #0c1a33 50%,
+    #08152b 100%
+  );
+  color: white;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
 }
 
 .inner {
@@ -17,24 +28,20 @@
 .leftSection {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
 }
 
 .menuButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
   padding: 0.5rem;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s ease;
 }
 
 .menuButton:hover {
-  background: #f3f4f6;
-}
-
-.title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.5rem;
-  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .rightSection {
@@ -45,16 +52,18 @@
 
 .welcomeText {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .profileButton {
-  padding: 0.5rem;
-  border-radius: 9999px;
+  color: white;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
 }
 
 .profileButton:hover {
-  background: #f3f4f6;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 @media (max-width: 768px) {
@@ -96,48 +105,8 @@
   .rightSection {
     gap: 1rem;
   }
-}
-.navbar {
-  width: 100%;
-  height: 64px;
 
-  /* Same color family as sidebar */
-  background: linear-gradient(
-    90deg,
-    #0f1f3d 0%,
-    #0c1a33 50%,
-    #08152b 100%
-  );
-
-  color: white;
-
-  display: flex;
-  align-items: center;
-
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-
-  backdrop-filter: blur(6px);
-}
-.title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #f1f5f9;
-}
-
-.welcomeText {
-  font-size: 14px;
-  color: rgba(255,255,255,0.85);
-}
-.profileButton {
-  color: white;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.profileButton:hover {
-  background: rgba(255,255,255,0.12);
-}
-.navbar {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  .menuButton {
+    display: none;
+  }
 }

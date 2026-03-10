@@ -20,15 +20,11 @@ import {
 } from "../../state/authState"
 
 type Props = {
-  collapsed: boolean
-  setCollapsed: (value: boolean) => void
   mobileMenuOpen: boolean
   setMobileMenuOpen: (value: boolean) => void
 }
 
 export default function MemberNavbar({
-  collapsed,
-  setCollapsed,
   mobileMenuOpen,
   setMobileMenuOpen
 }: Props) {
@@ -115,11 +111,6 @@ export default function MemberNavbar({
     : "-"
 
   const handleMenuClick = () => {
-    const isDesktop = window.matchMedia("(min-width: 1024px)").matches
-    if (isDesktop) {
-      setCollapsed(!collapsed)
-      return
-    }
     setMobileMenuOpen(!mobileMenuOpen)
   }
 
@@ -137,10 +128,6 @@ export default function MemberNavbar({
             >
               <Menu size={20} />
             </button>
-
-            <h1 className={styles.title}>
-              Dashboard
-            </h1>
 
           </div>
 
