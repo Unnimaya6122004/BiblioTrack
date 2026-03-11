@@ -22,6 +22,7 @@ import useDebouncedValue from "../../hooks/useDebouncedValue"
 import {
   decodeToken,
   extractRoleFromPayload,
+  getStoredRole,
   getStoredToken
 } from "../../state/authState"
 
@@ -50,7 +51,7 @@ export default function BooksPage() {
   const debouncedSearch = useDebouncedValue(search)
 
   const token = getStoredToken()
-  const role = extractRoleFromPayload(token ? decodeToken(token) : null)
+  const role = getStoredRole() ?? extractRoleFromPayload(token ? decodeToken(token) : null)
   const isAdmin = role === "ADMIN"
 
   const loadBooks = async () => {
@@ -224,7 +225,7 @@ export default function BooksPage() {
             setPage(0)
             setSelectedAuthor(e.target.value)
           }}
-          className="w-56 border border-gray-300 bg-white px-4 py-2 rounded-lg text-gray-700 shadow-sm outline-none transition-all hover:border-[#162a52] focus:border-[#0f1f3d] focus:ring-2 focus:ring-[#0f1f3d]"
+          className="w-56 border border-gray-300 bg-white px-4 py-2 rounded-lg text-gray-700 shadow-sm outline-none transition-all hover:border-[#162a52] focus:border-gray-300 focus:ring-0"
         >
           <option value="">Filter by Author</option>
           {authors.map((author) => (
@@ -240,7 +241,7 @@ export default function BooksPage() {
             setPage(0)
             setSelectedCategory(e.target.value)
           }}
-          className="w-56 border border-gray-300 bg-white px-4 py-2 rounded-lg text-gray-700 shadow-sm outline-none transition-all hover:border-[#162a52] focus:border-[#0f1f3d] focus:ring-2 focus:ring-[#0f1f3d]"
+          className="w-56 border border-gray-300 bg-white px-4 py-2 rounded-lg text-gray-700 shadow-sm outline-none transition-all hover:border-[#162a52] focus:border-gray-300 focus:ring-0"
         >
           <option value="">Filter by Category</option>
           {categories.map((category) => (

@@ -17,30 +17,40 @@ type FineRow = {
   status: string
 }
 
+type FineFilter = "ALL" | "UNPAID" | "PAID"
+
 export default function FinesPage() {
 
   const [fines, setFines] = useState<FineRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [payId, setPayId] = useState<number | null>(null)
+  const [filter, setFilter] = useState<FineFilter>("ALL")
 
   const loadFines = async () => {
     try {
       setLoading(true)
       setError("")
 
-      const response = await getFines()
-      const mappedFines = response.content.map((fine: FineDto) => ({
-        id: fine.id,
-        user: fine.userName,
-        loanId: fine.loanId,
-        amount: formatCurrency(fine.amount),
-        issued: formatDate(fine.issuedDate),
-        paid: formatDate(fine.paidDate),
-        status: fine.status
-      }))
+      const response = await getFines({ page: 0, size: 200 })
+      const mappedFines = response.content
+        .map((fine: FineDto) => ({
+          id: fine.id,
+          user: fine.userName,
+          loanId: fine.loanId,
+          amount: formatCurrency(fine.amount),
+          issued: formatDate(fine.issuedDate),
+          paid: formatDate(fine.paidDate),
+          status: fine.status
+        }))
+        .sort((a, b) => a.id - b.id)
 
-      setFines(mappedFines)
+      if (filter === "ALL") {
+        setFines(mappedFines)
+        return
+      }
+
+      setFines(mappedFines.filter((fine) => fine.status === filter))
     } catch (requestError) {
       setError(toErrorMessage(requestError, "Failed to load fines"))
       setFines([])
@@ -51,7 +61,7 @@ export default function FinesPage() {
 
   useEffect(() => {
     void loadFines()
-  }, [])
+  }, [filter])
 
   const handlePay = async (id: number) => {
     try {
@@ -108,6 +118,23 @@ export default function FinesPage() {
           Manage overdue fines
         </p>
 
+      </div>
+
+      {/* Status Filters */}
+      <div className="flex gap-3 mb-6">
+        {(["ALL", "UNPAID", "PAID"] as FineFilter[]).map((item) => (
+          <button
+            key={item}
+            onClick={() => setFilter(item)}
+            className={`px-4 py-2 rounded-lg text-sm border
+              ${filter === item
+                ? "bg-[#0f1f3d] text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+          >
+            {item}
+          </button>
+        ))}
       </div>
 
       {loading && (

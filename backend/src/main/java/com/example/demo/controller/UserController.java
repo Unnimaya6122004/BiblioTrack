@@ -31,8 +31,9 @@ public class UserController {
     @GetMapping(params = "!id")
     public Page<UserResponseDTO> getAllUsers(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String fullName,
             Pageable pageable) {
-        return userService.getAllUsers(status, pageable);
+        return userService.getAllUsers(status, fullName, pageable);
     }
 
     @GetMapping(params = "id")

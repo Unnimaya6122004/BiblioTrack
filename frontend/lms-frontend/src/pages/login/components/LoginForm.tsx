@@ -3,19 +3,26 @@ import { useNavigate } from "react-router-dom"
 
 import Button from "../../../components/ui/Button/Button"
 import Input from "../../../components/ui/Input/Input"
-import { API_BASE_URL } from "../../../utils/api"
-import { findUserByEmail } from "../../../api/lmsApi"
+import { API_BASE_URL, ApiError } from "../../../utils/api"
+import { findUserByEmail, getUsers } from "../../../api/lmsApi"
 import {
   clearStoredUserId,
+  clearStoredToken,
+  extractEmailFromPayload,
+  extractRoleFromPayload,
   setStoredToken,
+  setStoredRole,
+  setStoredEmail,
+  setAuthenticatedSession,
   setStoredUserId,
   decodeToken,
-  extractRoleFromPayload,
   extractUserIdFromPayload
 } from "../../../state/authState"
 
 interface LoginResponse {
   token?: string
+  role?: string
+  email?: string
   message?: string
 }
 
@@ -44,6 +51,7 @@ export default function LoginForm({ error, setError }: LoginFormProps) {
         `${API_BASE_URL}/auth/login`,
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json"
           },
@@ -66,23 +74,45 @@ export default function LoginForm({ error, setError }: LoginFormProps) {
         throw new Error(data.message || "Invalid credentials")
       }
 
-      const token = data.token
-
-      if (!token) {
-        throw new Error("Invalid email or password")
-      }
-
-      const payload = decodeToken(token)
-      console.log("JWT payload:", payload)
-
-      const role = extractRoleFromPayload(payload)
+      const token = typeof data.token === "string" ? data.token : null
+      const payload = token ? decodeToken(token) : null
+      const roleFromPayload = extractRoleFromPayload(payload)
+      const roleFromResponse = typeof data.role === "string"
+        ? data.role.trim().toUpperCase()
+        : ""
+      const role = roleFromResponse === "ADMIN"
+        ? "ADMIN"
+        : roleFromResponse === "MEMBER" || roleFromResponse === "USER"
+          ? "MEMBER"
+          : roleFromPayload
 
       if (!role) {
         throw new Error("Invalid email or password")
       }
 
-      setStoredToken(token)
+      if (token) {
+        setStoredToken(token)
+      }
+
+      const resolvedEmail = (typeof data.email === "string" && data.email.trim())
+        ? data.email.trim()
+        : extractEmailFromPayload(payload) || email.trim()
+
+      setStoredRole(role)
+      setStoredEmail(resolvedEmail)
+      setAuthenticatedSession()
       setError("")
+
+      // Enforce cookie-based auth: proceed only if backend session is active.
+      try {
+        await getUsers({ page: 0, size: 1 })
+      } catch (requestError) {
+        if (requestError instanceof ApiError && requestError.status === 401) {
+          throw new Error("Login succeeded but auth cookie was not stored by browser")
+        }
+
+        throw requestError
+      }
 
       const userIdFromToken = extractUserIdFromPayload(payload)
 
@@ -90,7 +120,7 @@ export default function LoginForm({ error, setError }: LoginFormProps) {
         setStoredUserId(userIdFromToken)
       } else {
         try {
-          const user = await findUserByEmail(email.trim())
+          const user = await findUserByEmail(resolvedEmail)
           if (user) {
             setStoredUserId(user.id)
           } else {
@@ -110,8 +140,12 @@ export default function LoginForm({ error, setError }: LoginFormProps) {
 
     } catch (error) {
       console.error("Login error:", error)
-      setError("Invalid email or password")
-      clearStoredUserId()
+      setError(
+        error instanceof Error && error.message
+          ? error.message
+          : "Invalid email or password"
+      )
+      clearStoredToken()
 
     } finally {
       setLoading(false)

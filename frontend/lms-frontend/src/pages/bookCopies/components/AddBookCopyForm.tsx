@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
-import { createBookCopy } from "../../../api/lmsApi"
+import { createBookCopy, getBookCopies, getBooks } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
 import responsive from "../../../styles/responsive.module.css"
 
@@ -15,6 +15,62 @@ export default function AddBookCopyForm({ onClose, onCreated }: Props) {
   const [rackLocation, setRackLocation] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [bookIdSuggestions, setBookIdSuggestions] = useState<string[]>([])
+  const [barcodeSuggestions, setBarcodeSuggestions] = useState<string[]>([])
+  const [rackLocationSuggestions, setRackLocationSuggestions] = useState<string[]>([])
+
+  useEffect(() => {
+    let active = true
+
+    const loadSuggestions = async () => {
+      try {
+        const [booksResponse, copiesResponse] = await Promise.all([
+          getBooks({ page: 0, size: 200 }),
+          getBookCopies({ page: 0, size: 200 })
+        ])
+
+        if (!active) {
+          return
+        }
+
+        const uniqueBookIds = Array.from(
+          new Set(booksResponse.content.map((book) => String(book.id)))
+        )
+        const uniqueBarcodes = Array.from(
+          new Set(
+            copiesResponse.content
+              .map((copy) => copy.barcode.trim())
+              .filter((value) => value.length > 0)
+          )
+        )
+        const uniqueRackLocations = Array.from(
+          new Set(
+            copiesResponse.content
+              .map((copy) => copy.rackLocation?.trim() ?? "")
+              .filter((value) => value.length > 0)
+          )
+        )
+
+        setBookIdSuggestions(uniqueBookIds)
+        setBarcodeSuggestions(uniqueBarcodes)
+        setRackLocationSuggestions(uniqueRackLocations)
+      } catch {
+        if (!active) {
+          return
+        }
+
+        setBookIdSuggestions([])
+        setBarcodeSuggestions([])
+        setRackLocationSuggestions([])
+      }
+    }
+
+    void loadSuggestions()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,8 +112,14 @@ export default function AddBookCopyForm({ onClose, onCreated }: Props) {
           onChange={(e) => setBookId(e.target.value)}
           className="border rounded-lg px-3 py-2 w-full"
           placeholder="Enter book id"
+          list="copy-book-id-suggestions"
           required
         />
+        <datalist id="copy-book-id-suggestions">
+          {bookIdSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       <div>
@@ -67,8 +129,14 @@ export default function AddBookCopyForm({ onClose, onCreated }: Props) {
           onChange={(e) => setBarcode(e.target.value)}
           className="border rounded-lg px-3 py-2 w-full"
           placeholder="Enter barcode"
+          list="copy-barcode-suggestions"
           required
         />
+        <datalist id="copy-barcode-suggestions">
+          {barcodeSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       <div>
@@ -78,7 +146,13 @@ export default function AddBookCopyForm({ onClose, onCreated }: Props) {
           onChange={(e) => setRackLocation(e.target.value)}
           className="border rounded-lg px-3 py-2 w-full"
           placeholder="Enter rack location"
+          list="copy-rack-location-suggestions"
         />
+        <datalist id="copy-rack-location-suggestions">
+          {rackLocationSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       {error && (

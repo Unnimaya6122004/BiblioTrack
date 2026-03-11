@@ -149,13 +149,15 @@ function toQueryString(params: Record<string, string | number | undefined>): str
 
 export async function getUsers(params?: {
   status?: string
+  fullName?: string
   page?: number
   size?: number
 }): Promise<PageResponse<UserDto>> {
   const query = toQueryString({
     page: params?.page ?? 0,
     size: params?.size ?? 200,
-    status: params?.status
+    status: params?.status,
+    fullName: params?.fullName
   })
 
   return apiFetch<PageResponse<UserDto>>(`/users${query}`)
@@ -256,12 +258,14 @@ export async function getCategories(): Promise<CategoryDto[]> {
 }
 
 export async function getBookCopies(params?: {
+  barcode?: string
   page?: number
   size?: number
 }): Promise<PageResponse<BookCopyDto>> {
   const query = toQueryString({
     page: params?.page ?? 0,
-    size: params?.size ?? 200
+    size: params?.size ?? 200,
+    barcode: params?.barcode
   })
 
   return apiFetch<PageResponse<BookCopyDto>>(`/book-copies${query}`)

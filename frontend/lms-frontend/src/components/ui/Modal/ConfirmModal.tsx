@@ -3,6 +3,7 @@ import Modal from "./Modal"
 type ConfirmModalProps = {
   title: string
   message: string
+  errorMessage?: string
   confirmText?: string
   cancelText?: string
   onConfirm: () => void
@@ -12,6 +13,7 @@ type ConfirmModalProps = {
 export default function ConfirmModal({
   title,
   message,
+  errorMessage,
   confirmText = "Confirm",
   cancelText = "Cancel",
   onConfirm,
@@ -28,6 +30,12 @@ export default function ConfirmModal({
       <p className="text-gray-600 mb-6">
         {message}
       </p>
+
+      {errorMessage && (
+        <p className="text-sm text-red-600 mb-4">
+          {errorMessage}
+        </p>
+      )}
 
       <div className="flex justify-end gap-3">
 

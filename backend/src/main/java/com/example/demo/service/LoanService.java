@@ -69,7 +69,7 @@ public class LoanService {
             throw new BadRequestException("User already has maximum active loans (5)");
         }
 
-        boolean hasUnpaidFine = fineRepository.existsByUserIdAndStatus(user.getId(), FineStatus.UNPAID);
+        boolean hasUnpaidFine = fineRepository.existsByLoanUserIdAndStatus(user.getId(), FineStatus.UNPAID);
         if (hasUnpaidFine) {
             log.warn("Blocked loan issue: userId={} has unpaid fines", user.getId());
             throw new BadRequestException("User has unpaid fines. Cannot issue book.");
@@ -92,18 +92,25 @@ public class LoanService {
             throw new BadRequestException("Book copy is not available");
         }
 
-        Reservation activeReservation = reservationRepository
-                .findFirstByUserIdAndBookIdAndStatus(
-                        user.getId(),
+        Reservation firstQueuedReservation = reservationRepository
+                .findFirstByBookIdAndStatusOrderByReservationDateAscIdAsc(
                         bookCopy.getBook().getId(),
                         ReservationStatus.ACTIVE
                 )
                 .orElse(null);
-        if (activeReservation != null) {
-            activeReservation.setStatus(ReservationStatus.COMPLETED);
-            reservationRepository.save(activeReservation);
+
+        if (firstQueuedReservation != null
+                && !firstQueuedReservation.getUser().getId().equals(user.getId())) {
+            throw new BadRequestException(
+                    "Book is reserved for another user in queue. First reservation userId: "
+                            + firstQueuedReservation.getUser().getId());
+        }
+
+        if (firstQueuedReservation != null) {
+            firstQueuedReservation.setStatus(ReservationStatus.COMPLETED);
+            reservationRepository.save(firstQueuedReservation);
             log.info("Reservation completed on loan issue: reservationId={}, userId={}, bookId={}",
-                    activeReservation.getId(), user.getId(), bookCopy.getBook().getId());
+                    firstQueuedReservation.getId(), user.getId(), bookCopy.getBook().getId());
         }
 
         Loan loan = new Loan();
@@ -145,7 +152,7 @@ public class LoanService {
         bookCopyRepository.save(bookCopy);
 
         Reservation nextReservation = reservationRepository
-                .findFirstByBookIdAndStatusOrderByReservationDateAsc(
+                .findFirstByBookIdAndStatusOrderByReservationDateAscIdAsc(
                         bookCopy.getBook().getId(),
                         ReservationStatus.ACTIVE
                 )

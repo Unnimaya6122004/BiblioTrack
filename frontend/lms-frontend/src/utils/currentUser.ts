@@ -1,19 +1,44 @@
-import { findUserByEmail, type UserDto } from "../api/lmsApi"
-import { decodeToken, extractEmailFromPayload, getStoredToken } from "../state/authState"
+import {
+  findUserByEmail,
+  getUserById,
+  type UserDto
+} from "../api/lmsApi"
+import {
+  decodeToken,
+  extractEmailFromPayload,
+  getStoredUserId,
+  getStoredEmail,
+  getStoredToken,
+  setStoredUserId
+} from "../state/authState"
+import { ApiError } from "./api"
 
 export async function getLoggedInUser(): Promise<UserDto | null> {
-  const token = getStoredToken()
-
-  if (!token) {
-    return null
+  const storedUserId = getStoredUserId()
+  if (storedUserId) {
+    try {
+      return await getUserById(storedUserId)
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 404) {
+        throw error
+      }
+    }
   }
 
-  const payload = decodeToken(token)
-  const email = extractEmailFromPayload(payload)
+  const token = getStoredToken()
+  const payload = token ? decodeToken(token) : null
+  const email = getStoredEmail() || extractEmailFromPayload(payload)
 
   if (!email) {
     return null
   }
 
-  return findUserByEmail(email)
+  const user = await findUserByEmail(email)
+
+  if (!user) {
+    return null
+  }
+
+  setStoredUserId(user.id)
+  return user
 }

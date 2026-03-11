@@ -31,4 +31,13 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query("select u from User u where u.status = :status and u.deleted = false")
     Page<User> findByStatus(@Param("status") UserStatus status, Pageable pageable);
+
+    @Query("select u from User u where lower(u.fullName) like lower(concat('%', :fullName, '%')) and u.deleted = false")
+    Page<User> findByFullNameContainingIgnoreCase(@Param("fullName") String fullName, Pageable pageable);
+
+    @Query("select u from User u where u.status = :status and lower(u.fullName) like lower(concat('%', :fullName, '%')) and u.deleted = false")
+    Page<User> findByStatusAndFullNameContainingIgnoreCase(
+            @Param("status") UserStatus status,
+            @Param("fullName") String fullName,
+            Pageable pageable);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 
 import MemberLayout from "../../../components/layout/MemberLayout"
 import Table from "../../../components/ui/Table/Table"
@@ -26,7 +26,11 @@ export default function BrowseBooksPage() {
         setLoading(true)
         setError("")
 
-        const response = await getBooks()
+        const response = await getBooks({
+          title: debouncedSearch.trim() || undefined,
+          page: 0,
+          size: 200
+        })
         setBooks(
           response.content.map((book: BookDto) => ({
             id: book.id,
@@ -43,25 +47,13 @@ export default function BrowseBooksPage() {
     }
 
     void loadBooks()
-  }, [])
+  }, [debouncedSearch])
 
   const columns = [
     { header: "ID", accessor: "id" },
     { header: "Title", accessor: "title" },
     { header: "ISBN", accessor: "isbn" }
   ]
-
-  const filteredBooks = useMemo(() => {
-    const normalizedSearch = debouncedSearch.trim().toLowerCase()
-
-    if (!normalizedSearch) {
-      return books
-    }
-
-    return books.filter((book) =>
-      book.title.toLowerCase().includes(normalizedSearch)
-    )
-  }, [books, debouncedSearch])
 
   return (
     <MemberLayout>
@@ -101,7 +93,7 @@ export default function BrowseBooksPage() {
       )}
 
       {/* Table */}
-      <Table columns={columns} data={filteredBooks} />
+      <Table columns={columns} data={books} />
 
     </MemberLayout>
   )

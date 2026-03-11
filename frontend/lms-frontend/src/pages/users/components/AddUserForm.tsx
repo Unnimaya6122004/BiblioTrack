@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { createUser, updateUser } from "../../../api/lmsApi"
+import { createUser, getUsers, updateUser } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../utils/api"
 import responsive from "../../../styles/responsive.module.css"
 
@@ -27,6 +27,62 @@ export default function AddUserForm({ onClose, onCreated, editingUser }: Props) 
   const [status, setStatus] = useState<"ACTIVE" | "INACTIVE" | "BLOCKED">("ACTIVE")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [nameSuggestions, setNameSuggestions] = useState<string[]>([])
+  const [emailSuggestions, setEmailSuggestions] = useState<string[]>([])
+  const [phoneSuggestions, setPhoneSuggestions] = useState<string[]>([])
+
+  useEffect(() => {
+    let active = true
+
+    const loadSuggestions = async () => {
+      try {
+        const usersResponse = await getUsers({ page: 0, size: 200 })
+        if (!active) {
+          return
+        }
+
+        const names = Array.from(
+          new Set(
+            usersResponse.content
+              .map((user) => user.fullName.trim())
+              .filter((value) => value.length > 0)
+          )
+        )
+        const emails = Array.from(
+          new Set(
+            usersResponse.content
+              .map((user) => user.email.trim())
+              .filter((value) => value.length > 0)
+          )
+        )
+        const phones = Array.from(
+          new Set(
+            usersResponse.content
+              .map((user) => user.phone?.trim() ?? "")
+              .filter((value) => value.length > 0)
+          )
+        )
+
+        setNameSuggestions(names)
+        setEmailSuggestions(emails)
+        setPhoneSuggestions(phones)
+      } catch {
+        if (!active) {
+          return
+        }
+
+        setNameSuggestions([])
+        setEmailSuggestions([])
+        setPhoneSuggestions([])
+      }
+    }
+
+    void loadSuggestions()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (editingUser) {
@@ -107,9 +163,15 @@ export default function AddUserForm({ onClose, onCreated, editingUser }: Props) 
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           placeholder="Enter full name"
+          list="user-name-suggestions"
           required
           className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <datalist id="user-name-suggestions">
+          {nameSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       {/* Email */}
@@ -123,9 +185,15 @@ export default function AddUserForm({ onClose, onCreated, editingUser }: Props) 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter email"
+          list="user-email-suggestions"
           required
           className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <datalist id="user-email-suggestions">
+          {emailSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       {/* Password */}
@@ -156,8 +224,14 @@ export default function AddUserForm({ onClose, onCreated, editingUser }: Props) 
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="Enter phone number"
+          list="user-phone-suggestions"
           className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <datalist id="user-phone-suggestions">
+          {phoneSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       {/* Role */}

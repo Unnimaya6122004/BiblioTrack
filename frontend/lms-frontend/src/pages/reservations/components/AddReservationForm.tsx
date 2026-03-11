@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { createReservation } from "../../../api/lmsApi"
+import { createReservation, getBooks, getUsers } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
 import responsive from "../../../styles/responsive.module.css"
 
@@ -15,12 +15,47 @@ export default function AddReservationForm({ onClose, onCreated, defaultUserId }
   const [bookId, setBookId] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [userIdSuggestions, setUserIdSuggestions] = useState<string[]>([])
+  const [bookIdSuggestions, setBookIdSuggestions] = useState<string[]>([])
 
   useEffect(() => {
     if (defaultUserId && defaultUserId > 0) {
       setUserId(String(defaultUserId))
     }
   }, [defaultUserId])
+
+  useEffect(() => {
+    let active = true
+
+    const loadSuggestions = async () => {
+      try {
+        const [usersResponse, booksResponse] = await Promise.all([
+          getUsers({ page: 0, size: 200 }),
+          getBooks({ page: 0, size: 200 })
+        ])
+
+        if (!active) {
+          return
+        }
+
+        setUserIdSuggestions(usersResponse.content.map((user) => String(user.id)))
+        setBookIdSuggestions(booksResponse.content.map((book) => String(book.id)))
+      } catch {
+        if (!active) {
+          return
+        }
+
+        setUserIdSuggestions([])
+        setBookIdSuggestions([])
+      }
+    }
+
+    void loadSuggestions()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,9 +122,15 @@ export default function AddReservationForm({ onClose, onCreated, defaultUserId }
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             placeholder="Enter user ID"
+            list="reservation-user-id-suggestions"
             className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
+          <datalist id="reservation-user-id-suggestions">
+            {userIdSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
         </div>
       )}
 
@@ -104,9 +145,15 @@ export default function AddReservationForm({ onClose, onCreated, defaultUserId }
           value={bookId}
           onChange={(e) => setBookId(e.target.value)}
           placeholder="Enter book ID"
+          list="reservation-book-id-suggestions"
           className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
           required
         />
+        <datalist id="reservation-book-id-suggestions">
+          {bookIdSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       {error && (

@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react"
 import Input from "../../../components/ui/Input/Input"
 import Button from "../../../components/ui/Button/Button"
-import { createBook, updateBook } from "../../../api/lmsApi"
+import {
+  createBook,
+  getAuthors,
+  getBooks,
+  getCategories,
+  type AuthorDto,
+  type CategoryDto,
+  updateBook
+} from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../utils/api"
 import responsive from "../../../styles/responsive.module.css"
 
@@ -36,6 +44,64 @@ export default function AddBookForm({ onClose, onCreated, editingBook }: Props) 
   const [categoryIds, setCategoryIds] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
+  const [isbnSuggestions, setIsbnSuggestions] = useState<string[]>([])
+  const [authorSuggestions, setAuthorSuggestions] = useState<AuthorDto[]>([])
+  const [categorySuggestions, setCategorySuggestions] = useState<CategoryDto[]>([])
+
+  useEffect(() => {
+    let active = true
+
+    const loadSuggestions = async () => {
+      try {
+        const [booksResponse, authorsResponse, categoriesResponse] = await Promise.all([
+          getBooks({ page: 0, size: 200 }),
+          getAuthors(),
+          getCategories()
+        ])
+
+        if (!active) {
+          return
+        }
+
+        const titles = Array.from(
+          new Set(
+            booksResponse.content
+              .map((book) => book.title.trim())
+              .filter((value) => value.length > 0)
+          )
+        )
+
+        const isbns = Array.from(
+          new Set(
+            booksResponse.content
+              .map((book) => book.isbn?.trim() ?? "")
+              .filter((value) => value.length > 0)
+          )
+        )
+
+        setTitleSuggestions(titles)
+        setIsbnSuggestions(isbns)
+        setAuthorSuggestions(authorsResponse)
+        setCategorySuggestions(categoriesResponse)
+      } catch {
+        if (!active) {
+          return
+        }
+
+        setTitleSuggestions([])
+        setIsbnSuggestions([])
+        setAuthorSuggestions([])
+        setCategorySuggestions([])
+      }
+    }
+
+    void loadSuggestions()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (editingBook) {
@@ -101,8 +167,14 @@ export default function AddBookForm({ onClose, onCreated, editingBook }: Props) 
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Book title"
+          list="book-title-suggestions"
           required
         />
+        <datalist id="book-title-suggestions">
+          {titleSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       <div>
@@ -114,7 +186,13 @@ export default function AddBookForm({ onClose, onCreated, editingBook }: Props) 
           value={isbn}
           onChange={(e) => setIsbn(e.target.value)}
           placeholder="ISBN number"
+          list="book-isbn-suggestions"
         />
+        <datalist id="book-isbn-suggestions">
+          {isbnSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
       </div>
 
       <div>
@@ -126,7 +204,15 @@ export default function AddBookForm({ onClose, onCreated, editingBook }: Props) 
           value={authorIds}
           onChange={(e) => setAuthorIds(e.target.value)}
           placeholder="Example: 1,2"
+          list="author-id-suggestions"
         />
+        <datalist id="author-id-suggestions">
+          {authorSuggestions.map((author) => (
+            <option key={author.id} value={String(author.id)}>
+              {author.name}
+            </option>
+          ))}
+        </datalist>
       </div>
 
       <div>
@@ -138,7 +224,15 @@ export default function AddBookForm({ onClose, onCreated, editingBook }: Props) 
           value={categoryIds}
           onChange={(e) => setCategoryIds(e.target.value)}
           placeholder="Example: 1,3"
+          list="category-id-suggestions"
         />
+        <datalist id="category-id-suggestions">
+          {categorySuggestions.map((category) => (
+            <option key={category.id} value={String(category.id)}>
+              {category.name}
+            </option>
+          ))}
+        </datalist>
       </div>
 
       {error && (

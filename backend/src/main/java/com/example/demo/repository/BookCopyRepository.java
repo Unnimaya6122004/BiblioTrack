@@ -11,4 +11,6 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, Integer> {
     boolean existsByBookIdAndStatus(Integer bookId, BookCopyStatus status);
 
     Page<BookCopy> findByBookDeletedFalse(Pageable pageable);
+
+    Page<BookCopy> findByBookDeletedFalseAndBarcodeContainingIgnoreCase(String barcode, Pageable pageable);
 }

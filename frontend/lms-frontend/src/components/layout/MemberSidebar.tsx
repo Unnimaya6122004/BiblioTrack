@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import styles from "./Sidebar.module.css"
 import { clearStoredToken } from "../../state/authState"
+import { API_BASE_URL } from "../../utils/api"
 
 const DESKTOP_MEDIA_QUERY = "(min-width: 1024px)"
 const MIN_SIDEBAR_WIDTH = 220
@@ -55,7 +56,16 @@ export default function MemberSidebar({
     { name: "My Fines", path: "/member/fines", icon: AlertTriangle },
   ]
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include"
+      })
+    } catch {
+      // continue with local cleanup
+    }
+
     clearStoredToken()
     navigate("/login")
   }

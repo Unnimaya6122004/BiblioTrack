@@ -1,9 +1,9 @@
-import { clearStoredToken, getStoredToken } from "../state/authState"
+import { clearStoredToken } from "../state/authState"
 
-const DEFAULT_API_BASE_URL = "http://localhost:8081/api/v1"
+const DEFAULT_API_BASE_URL = "/api/v1"
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? DEFAULT_API_BASE_URL
+// Always use same-origin proxy path in frontend to keep auth cookie flow consistent.
+export const API_BASE_URL = DEFAULT_API_BASE_URL
 
 export interface ValidationErrors {
   [key: string]: string
@@ -90,15 +90,10 @@ export async function apiRequest<T>(
   path: string,
   init?: RequestInit
 ): Promise<T> {
-  const token = getStoredToken()
   const headers = new Headers(init?.headers)
 
   if (!headers.has("Content-Type") && init?.body !== undefined) {
     headers.set("Content-Type", "application/json")
-  }
-
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`)
   }
 
   let response: Response
@@ -106,6 +101,7 @@ export async function apiRequest<T>(
   try {
     response = await fetch(buildUrl(path), {
       ...init,
+      credentials: "include",
       headers
     })
   } catch {

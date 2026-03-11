@@ -1,4 +1,4 @@
-import { Menu, User } from "lucide-react"
+import { CalendarDays, Mail, Menu, Phone, Shield, User } from "lucide-react"
 import { useEffect, useState } from "react"
 import Modal from "../ui/Modal/Modal"
 import styles from "./DashboardNavbar.module.css"
@@ -14,6 +14,8 @@ import {
   decodeToken,
   extractEmailFromPayload,
   extractRoleFromPayload,
+  getStoredEmail,
+  getStoredRole,
   getStoredUserId,
   getStoredToken,
   setStoredUserId
@@ -35,8 +37,8 @@ export default function MemberNavbar({
   const [profileError, setProfileError] = useState("")
   const token = getStoredToken()
   const payload = token ? decodeToken(token) : null
-  const email = extractEmailFromPayload(payload)
-  const role = extractRoleFromPayload(payload) ?? "MEMBER"
+  const email = getStoredEmail() || extractEmailFromPayload(payload)
+  const role = getStoredRole() ?? extractRoleFromPayload(payload) ?? "MEMBER"
   const storedUserId = getStoredUserId()
 
   useEffect(() => {
@@ -109,6 +111,21 @@ export default function MemberNavbar({
   const createdAtLabel = profile?.createdAt
     ? new Date(profile.createdAt).toLocaleDateString()
     : "-"
+  const statusLabel = profile?.status ?? "-"
+  const initials = (profile?.fullName ?? "User")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("")
+
+  const statusClassName = statusLabel === "ACTIVE"
+    ? styles.statusActive
+    : statusLabel === "INACTIVE"
+      ? styles.statusInactive
+      : statusLabel === "BLOCKED"
+        ? styles.statusBlocked
+        : styles.statusUnknown
 
   const handleMenuClick = () => {
     setMobileMenuOpen(!mobileMenuOpen)
@@ -153,7 +170,7 @@ export default function MemberNavbar({
       {openModal && (
         <Modal onClose={() => setOpenModal(false)}>
 
-          <h2 className="text-lg font-semibold mb-6">
+          <h2 className={styles.profileModalTitle}>
             Profile
           </h2>
 
@@ -162,38 +179,63 @@ export default function MemberNavbar({
           ) : profileError ? (
             <p className="text-sm text-red-600">{profileError}</p>
           ) : (
-            <div className="space-y-3 text-sm">
+            <div className={styles.profileCard}>
+              <div className={styles.profileHero}>
+                <div className={styles.profileAvatar}>
+                  {initials || "U"}
+                </div>
 
-              <div>
-                <span className="text-gray-500">Full Name:</span>
-                <p className="font-medium">{profile?.fullName ?? "-"}</p>
+                <div className={styles.profileHeroText}>
+                  <p className={styles.profileName}>
+                    {profile?.fullName ?? "User"}
+                  </p>
+                  <p className={styles.profileEmail}>
+                    {(profile?.email ?? email) || "-"}
+                  </p>
+                </div>
+
+                <span className={styles.roleBadge}>
+                  <Shield size={14} />
+                  {roleLabel}
+                </span>
               </div>
 
-              <div>
-                <span className="text-gray-500">Email:</span>
-                <p className="font-medium">{profile?.email ?? email}</p>
-              </div>
+              <div className={styles.profileGrid}>
+                <div className={styles.infoTile}>
+                  <span className={styles.infoLabel}>Email</span>
+                  <div className={styles.infoValueRow}>
+                    <Mail size={14} />
+                    <p className={styles.infoValue}>
+                      {(profile?.email ?? email) || "-"}
+                    </p>
+                  </div>
+                </div>
 
-              <div>
-                <span className="text-gray-500">Role:</span>
-                <p className="font-medium">{roleLabel}</p>
-              </div>
+                <div className={styles.infoTile}>
+                  <span className={styles.infoLabel}>Phone</span>
+                  <div className={styles.infoValueRow}>
+                    <Phone size={14} />
+                    <p className={styles.infoValue}>{profile?.phone ?? "-"}</p>
+                  </div>
+                </div>
 
-              <div>
-                <span className="text-gray-500">Phone:</span>
-                <p className="font-medium">{profile?.phone ?? "-"}</p>
-              </div>
+                <div className={styles.infoTile}>
+                  <span className={styles.infoLabel}>Status</span>
+                  <div className={styles.infoValueRow}>
+                    <span className={`${styles.statusBadge} ${statusClassName}`}>
+                      {statusLabel}
+                    </span>
+                  </div>
+                </div>
 
-              <div>
-                <span className="text-gray-500">Status:</span>
-                <p className="font-medium">{profile?.status ?? "-"}</p>
+                <div className={styles.infoTile}>
+                  <span className={styles.infoLabel}>Created At</span>
+                  <div className={styles.infoValueRow}>
+                    <CalendarDays size={14} />
+                    <p className={styles.infoValue}>{createdAtLabel}</p>
+                  </div>
+                </div>
               </div>
-
-              <div>
-                <span className="text-gray-500">Created At:</span>
-                <p className="font-medium">{createdAtLabel}</p>
-              </div>
-
             </div>
           )}
 

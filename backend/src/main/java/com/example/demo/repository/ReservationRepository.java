@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Integer> {
 
-    Optional<Reservation> findFirstByBookIdAndStatusOrderByReservationDateAsc(Integer bookId, ReservationStatus status);
+    Optional<Reservation> findFirstByBookIdAndStatusOrderByReservationDateAscIdAsc(Integer bookId, ReservationStatus status);
 
     boolean existsByUserIdAndBookIdAndStatus(Integer userId, Integer bookId, ReservationStatus status);
 

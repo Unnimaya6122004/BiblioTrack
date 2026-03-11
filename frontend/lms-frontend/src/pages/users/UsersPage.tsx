@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Pencil, Trash2 } from "lucide-react"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
@@ -7,13 +7,21 @@ import Modal from "../../components/ui/Modal/Modal"
 import ConfirmModal from "../../components/ui/Modal/ConfirmModal"
 
 import AddUserForm from "./components/AddUserForm"
-import { deleteUser, getUsers, mapRoleForUi, type UserDto } from "../../api/lmsApi"
+import {
+  deleteUser,
+  getFines,
+  getUnpaidFineTotal,
+  getUsers,
+  mapRoleForUi,
+  type UserDto
+} from "../../api/lmsApi"
 import { toErrorMessage } from "../../utils/api"
 import useDebouncedValue from "../../hooks/useDebouncedValue"
 import {
   decodeToken,
   extractUserIdFromPayload,
   extractRoleFromPayload,
+  getStoredRole,
   getStoredUserId,
   getStoredToken
 } from "../../state/authState"
@@ -28,12 +36,14 @@ type UserRow = {
 }
 
 export default function UsersPage() {
+  const PAGE_SIZE = 10
 
   const [openModal, setOpenModal] = useState(false)
   const [users, setUsers] = useState<UserRow[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [deleteError, setDeleteError] = useState("")
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [editingUser, setEditingUser] = useState<UserRow | null>(null)
   const [page, setPage] = useState(0)
@@ -42,7 +52,7 @@ export default function UsersPage() {
 
   const token = getStoredToken()
   const payload = token ? decodeToken(token) : null
-  const role = extractRoleFromPayload(payload)
+  const role = getStoredRole() ?? extractRoleFromPayload(payload)
   const currentAdminUserId = getStoredUserId() ?? extractUserIdFromPayload(payload)
   const isAdmin = role === "ADMIN"
 
@@ -51,7 +61,38 @@ export default function UsersPage() {
       setLoading(true)
       setError("")
 
-      const response = await getUsers({ page, size: 10 })
+      const normalizedSearch = debouncedSearch.trim().toLowerCase()
+
+      if (normalizedSearch) {
+        const response = await getUsers({
+          page: 0,
+          size: 200
+        })
+
+        const filteredUsers = response.content
+          .map((user: UserDto) => ({
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            role: mapRoleForUi(user.role),
+            phone: user.phone ?? "-",
+            status: (user.status ?? "ACTIVE") as "ACTIVE" | "INACTIVE" | "BLOCKED"
+          }))
+          .sort((a, b) => a.id - b.id)
+          .filter((user) => user.fullName.toLowerCase().includes(normalizedSearch))
+
+        const start = page * PAGE_SIZE
+        const end = start + PAGE_SIZE
+
+        setUsers(filteredUsers.slice(start, end))
+        setTotalPages(Math.ceil(filteredUsers.length / PAGE_SIZE))
+        return
+      }
+
+      const response = await getUsers({
+        page,
+        size: PAGE_SIZE
+      })
       const mappedUsers = response.content
         .map((user: UserDto) => ({
           id: user.id,
@@ -76,19 +117,25 @@ export default function UsersPage() {
 
   useEffect(() => {
     void loadUsers()
-  }, [page])
+  }, [debouncedSearch, page])
 
-  const filteredUsers = useMemo(() => {
-    const normalizedSearch = debouncedSearch.trim().toLowerCase()
+  const userHasAnyFine = async (userId: number): Promise<boolean> => {
+    let pageIndex = 0
 
-    if (!normalizedSearch) {
-      return users
+    while (true) {
+      const response = await getFines({ page: pageIndex, size: 200 })
+
+      if (response.content.some((fine) => fine.userId === userId)) {
+        return true
+      }
+
+      if (response.last) {
+        return false
+      }
+
+      pageIndex += 1
     }
-
-    return users.filter((user) =>
-      user.fullName.toLowerCase().includes(normalizedSearch)
-    )
-  }, [debouncedSearch, users])
+  }
 
   const handleDelete = async (id: number) => {
     if (!isAdmin) {
@@ -96,17 +143,33 @@ export default function UsersPage() {
     }
 
     if (currentAdminUserId !== null && id === currentAdminUserId) {
-      setError("You cannot delete your own admin account.")
-      setDeleteId(null)
+      setDeleteError("You cannot delete your own admin account.")
       return
     }
 
     try {
+      const [unpaidFineTotalRaw, hasAnyFine] = await Promise.all([
+        getUnpaidFineTotal(id),
+        userHasAnyFine(id)
+      ])
+      const unpaidFineTotal = Number(unpaidFineTotalRaw)
+
+      if (!Number.isFinite(unpaidFineTotal)) {
+        setDeleteError("Unable to verify fines for this user.")
+        return
+      }
+
+      if (hasAnyFine || unpaidFineTotal > 0) {
+        setDeleteError("Cannot delete user with fines.")
+        return
+      }
+
       await deleteUser(id)
       await loadUsers()
+      setDeleteError("")
       setDeleteId(null)
     } catch (requestError) {
-      setError(toErrorMessage(requestError, "Failed to delete user"))
+      setDeleteError(toErrorMessage(requestError, "Failed to delete user"))
     }
   }
 
@@ -148,7 +211,10 @@ export default function UsersPage() {
             ) : (
               <button
                 type="button"
-                onClick={() => setDeleteId(user.id)}
+                onClick={() => {
+                  setDeleteError("")
+                  setDeleteId(user.id)
+                }}
                 className="text-red-500 hover:text-red-700"
                 aria-label={`Delete user ${user.fullName}`}
               >
@@ -202,7 +268,10 @@ export default function UsersPage() {
         <input
           placeholder="Search by name..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setPage(0)
+            setSearch(e.target.value)
+          }}
           className="border px-4 py-2 rounded-lg w-80 outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -216,7 +285,7 @@ export default function UsersPage() {
       )}
 
       {/* Table */}
-      <Table columns={columns} data={filteredUsers} />
+      <Table columns={columns} data={users} />
 
       <div className="mt-6 flex items-center justify-between">
         <button
@@ -279,9 +348,13 @@ export default function UsersPage() {
         <ConfirmModal
           title="Delete User"
           message="Are you sure you want to delete this user?"
+          errorMessage={deleteError}
           confirmText="Delete"
           cancelText="Cancel"
-          onCancel={() => setDeleteId(null)}
+          onCancel={() => {
+            setDeleteError("")
+            setDeleteId(null)
+          }}
           onConfirm={() => {
             void handleDelete(deleteId)
           }}

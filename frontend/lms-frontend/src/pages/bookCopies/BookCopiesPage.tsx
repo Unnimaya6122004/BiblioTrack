@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Trash2 } from "lucide-react"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
@@ -19,6 +19,7 @@ type CopyRow = {
 }
 
 export default function BookCopiesPage() {
+  const PAGE_SIZE = 10
   const [copies, setCopies] = useState<CopyRow[]>([])
   const [openModal, setOpenModal] = useState(false)
   const [search, setSearch] = useState("")
@@ -34,7 +35,40 @@ export default function BookCopiesPage() {
       setLoading(true)
       setError("")
 
-      const response = await getBookCopies({ page, size: 10 })
+      const normalizedSearch = debouncedSearch.trim().toLowerCase()
+
+      if (normalizedSearch) {
+        const response = await getBookCopies({
+          page: 0,
+          size: 200
+        })
+
+        const mappedCopies = response.content
+          .map((copy: BookCopyDto) => ({
+            id: copy.id,
+            book: copy.bookTitle,
+            barcode: copy.barcode,
+            rackLocation: copy.rackLocation ?? "-",
+            status: copy.status
+          }))
+          .sort((a, b) => a.id - b.id)
+          .filter((copy) =>
+            copy.barcode.toLowerCase().includes(normalizedSearch)
+          )
+
+        const start = page * PAGE_SIZE
+        const end = start + PAGE_SIZE
+
+        setCopies(mappedCopies.slice(start, end))
+        setTotalPages(Math.ceil(mappedCopies.length / PAGE_SIZE))
+        return
+      }
+
+      const response = await getBookCopies({
+        page,
+        size: PAGE_SIZE
+      })
+
       const mappedCopies = response.content
         .map((copy: BookCopyDto) => ({
           id: copy.id,
@@ -58,19 +92,7 @@ export default function BookCopiesPage() {
 
   useEffect(() => {
     void loadCopies()
-  }, [page])
-
-  const filteredCopies = useMemo(() => {
-    const normalizedSearch = debouncedSearch.trim().toLowerCase()
-
-    if (!normalizedSearch) {
-      return copies
-    }
-
-    return copies.filter((copy) =>
-      copy.barcode.toLowerCase().includes(normalizedSearch)
-    )
-  }, [copies, debouncedSearch])
+  }, [debouncedSearch, page])
 
   const handleDelete = async (id: number) => {
     try {
@@ -85,7 +107,7 @@ export default function BookCopiesPage() {
   const columns = [
     { header: "ID", accessor: "id" },
     { header: "Book", accessor: "book" },
-    { header: "Barcode", accessor: "barcode" },
+    { header: "Barcode ID", accessor: "barcode" },
     { header: "Rack Location", accessor: "rackLocation" },
     { header: "Status", accessor: "status" },
     {
@@ -137,7 +159,10 @@ export default function BookCopiesPage() {
       <div className="mb-6">
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setPage(0)
+            setSearch(e.target.value)
+          }}
           placeholder="Search by barcode..."
           className="border px-4 py-2 rounded-lg w-80 outline-none"
         />
@@ -152,7 +177,7 @@ export default function BookCopiesPage() {
       )}
 
       {/* Table */}
-      <Table columns={columns} data={filteredCopies} />
+      <Table columns={columns} data={copies} />
 
       <div className="mt-6 flex items-center justify-between">
         <button

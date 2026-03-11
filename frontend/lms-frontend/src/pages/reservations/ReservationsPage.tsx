@@ -23,13 +23,17 @@ type ReservationRow = {
   status: string
 }
 
+type ReservationFilter = "ALL" | "ACTIVE" | "COMPLETED" | "CANCELLED"
+
 export default function ReservationsPage() {
+  const PAGE_SIZE = 10
 
   const [openModal, setOpenModal] = useState(false)
   const [reservations, setReservations] = useState<ReservationRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [cancelId, setCancelId] = useState<number | null>(null)
+  const [filter, setFilter] = useState<ReservationFilter>("ALL")
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
@@ -38,7 +42,28 @@ export default function ReservationsPage() {
       setLoading(true)
       setError("")
 
-      const response = await getReservations({ page, size: 10 })
+      if (filter !== "ALL") {
+        const response = await getReservations({ page: 0, size: 200 })
+        const filteredReservations = response.content
+          .map((reservation: ReservationDto) => ({
+            id: reservation.id,
+            user: reservation.userName,
+            book: reservation.bookTitle,
+            date: formatDate(reservation.reservationDate),
+            status: reservation.status
+          }))
+          .sort((a, b) => a.id - b.id)
+          .filter((reservation) => reservation.status === filter)
+
+        const start = page * PAGE_SIZE
+        const end = start + PAGE_SIZE
+
+        setReservations(filteredReservations.slice(start, end))
+        setTotalPages(Math.ceil(filteredReservations.length / PAGE_SIZE))
+        return
+      }
+
+      const response = await getReservations({ page, size: PAGE_SIZE })
       const mappedReservations = response.content
         .map((reservation: ReservationDto) => ({
           id: reservation.id,
@@ -62,7 +87,7 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     void loadReservations()
-  }, [page])
+  }, [page, filter])
 
   const handleCancel = async (id: number) => {
     try {
@@ -126,6 +151,26 @@ export default function ReservationsPage() {
           + New Reservation
         </button>
 
+      </div>
+
+      {/* Status Filters */}
+      <div className="flex gap-3 mb-6">
+        {(["ALL", "ACTIVE", "COMPLETED", "CANCELLED"] as ReservationFilter[]).map((item) => (
+          <button
+            key={item}
+            onClick={() => {
+              setPage(0)
+              setFilter(item)
+            }}
+            className={`px-4 py-2 rounded-lg text-sm border
+              ${filter === item
+                ? "bg-[#0f1f3d] text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+          >
+            {item}
+          </button>
+        ))}
       </div>
 
       {loading && (

@@ -17,14 +17,16 @@ public interface FineRepository extends JpaRepository<Fine, Integer> {
     List<Fine> findByLoanId(Integer loanId);
     Page<Fine> findByLoanId(Integer loanId, Pageable pageable);
 
-    // Get all unpaid fines for a user
-    List<Fine> findByUserIdAndStatus(Integer userId, FineStatus status);
+    // Get all unpaid fines for a user (resolved through loan ownership)
+    List<Fine> findByLoanUserIdAndStatus(Integer userId, FineStatus status);
 
     // Check if unpaid fine already exists for a loan
     Optional<Fine> findByLoanIdAndStatus(Integer loanId, FineStatus status);
 
-    boolean existsByUserIdAndStatus(Integer userId, FineStatus status);
+    boolean existsByLoanUserId(Integer userId);
 
-    @Query("select coalesce(sum(f.amount), 0) from Fine f where f.user.id = :userId and f.status = :status")
+    boolean existsByLoanUserIdAndStatus(Integer userId, FineStatus status);
+
+    @Query("select coalesce(sum(f.amount), 0) from Fine f where f.loan.user.id = :userId and f.status = :status")
     BigDecimal sumAmountByUserIdAndStatus(Integer userId, FineStatus status);
 }

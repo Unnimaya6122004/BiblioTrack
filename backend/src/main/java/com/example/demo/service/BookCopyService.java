@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.example.demo.dto.BookCopyRequest;
 import com.example.demo.dto.BookCopyResponseDTO;
@@ -23,7 +24,13 @@ public class BookCopyService {
     private final BookCopyRepository bookCopyRepository;
     private final BookRepository bookRepository;
 
-    public Page<BookCopyResponseDTO> getAll(Pageable pageable) {
+    public Page<BookCopyResponseDTO> getAll(String barcode, Pageable pageable) {
+        if (StringUtils.hasText(barcode)) {
+            return bookCopyRepository
+                    .findByBookDeletedFalseAndBarcodeContainingIgnoreCase(barcode.trim(), pageable)
+                    .map(this::toDto);
+        }
+
         return bookCopyRepository.findByBookDeletedFalse(pageable).map(this::toDto);
     }
 

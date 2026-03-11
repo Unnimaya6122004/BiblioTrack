@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.demo.dto.BookCopyRequest;
 import com.example.demo.dto.BookCopyResponseDTO;
@@ -27,8 +28,10 @@ public class BookCopyController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
-    public Page<BookCopyResponseDTO> getAll(Pageable pageable) {
-        return bookCopyService.getAll(pageable);
+    public Page<BookCopyResponseDTO> getAll(
+            @RequestParam(required = false) String barcode,
+            Pageable pageable) {
+        return bookCopyService.getAll(barcode, pageable);
     }
 
     @PostMapping("/{bookId}")

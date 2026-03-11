@@ -37,11 +37,31 @@ public class UserService {
     private final LoanRepository loanRepository;
     private final FineRepository fineRepository;
 
-    public Page<UserResponseDTO> getAllUsers(String status, Pageable pageable) {
-        if (StringUtils.hasText(status)) {
+    public Page<UserResponseDTO> getAllUsers(String status, String fullName, Pageable pageable) {
+        boolean hasStatus = StringUtils.hasText(status);
+        boolean hasFullName = StringUtils.hasText(fullName);
+
+        if (hasStatus && hasFullName) {
+            UserStatus userStatus = parseUserStatus(status);
+            return userRepository
+                    .findByStatusAndFullNameContainingIgnoreCase(
+                            userStatus,
+                            fullName.trim(),
+                            pageable)
+                    .map(this::convertToDTO);
+        }
+
+        if (hasStatus) {
             UserStatus userStatus = parseUserStatus(status);
             return userRepository.findByStatus(userStatus, pageable).map(this::convertToDTO);
         }
+
+        if (hasFullName) {
+            return userRepository
+                    .findByFullNameContainingIgnoreCase(fullName.trim(), pageable)
+                    .map(this::convertToDTO);
+        }
+
         return userRepository.findAll(pageable).map(this::convertToDTO);
     }
 
@@ -109,10 +129,11 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         boolean hasActiveLoan = loanRepository.existsByUserIdAndStatus(id, LoanStatus.ISSUED);
-        boolean hasUnpaidFine = fineRepository.existsByUserIdAndStatus(id, FineStatus.UNPAID);
-        if (hasActiveLoan || hasUnpaidFine) {
-            log.warn("Blocked user soft delete: userId={} has active loans or unpaid fines", id);
-            throw new BadRequestException("Cannot delete user. User has active loans or unpaid fines.");
+        boolean hasAnyFine = fineRepository.existsByLoanUserId(id);
+        boolean hasUnpaidFine = fineRepository.existsByLoanUserIdAndStatus(id, FineStatus.UNPAID);
+        if (hasActiveLoan || hasAnyFine || hasUnpaidFine) {
+            log.warn("Blocked user soft delete: userId={} has active loans or fines", id);
+            throw new BadRequestException("Cannot delete user. User has active loans or fines.");
         }
 
         user.setDeleted(true);
