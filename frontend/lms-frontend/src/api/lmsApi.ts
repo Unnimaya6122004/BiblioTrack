@@ -121,6 +121,22 @@ export interface FineDto {
   status: string
 }
 
+export interface NotificationDto {
+  id: number
+  title: string
+  message: string
+  createdByUserId?: number | null
+  createdByName?: string | null
+  createdAt: string
+  read: boolean
+  readAt?: string | null
+}
+
+export interface CreateNotificationPayload {
+  title: string
+  message: string
+}
+
 export function mapRoleForUi(role: UserRole): "ADMIN" | "MEMBER" {
   if (role === "USER") {
     return "MEMBER"
@@ -357,4 +373,35 @@ export async function payFine(id: number): Promise<FineDto> {
 
 export async function getUnpaidFineTotal(userId: number): Promise<number> {
   return apiFetch<number>(`/fines?userId=${userId}`)
+}
+
+export async function getNotifications(params?: {
+  page?: number
+  size?: number
+}): Promise<PageResponse<NotificationDto>> {
+  const query = toQueryString({
+    page: params?.page ?? 0,
+    size: params?.size ?? 200
+  })
+
+  return apiFetch<PageResponse<NotificationDto>>(`/notifications${query}`)
+}
+
+export async function createNotification(
+  payload: CreateNotificationPayload
+): Promise<NotificationDto> {
+  return apiFetch<NotificationDto>("/notifications", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function markNotificationAsRead(id: number): Promise<NotificationDto> {
+  return apiFetch<NotificationDto>(`/notifications/${id}/read`, {
+    method: "PUT"
+  })
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  return apiFetch<number>("/notifications/unread-count")
 }

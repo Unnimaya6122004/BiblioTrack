@@ -9,11 +9,13 @@ import UsersPage from "../pages/users/UsersPage"
 import LoansPage from "../pages/loans/LoansPage"
 import ReservationsPage from "../pages/reservations/ReservationsPage"
 import FinesPage from "../pages/fines/FinesPage"
+import NotificationsPage from "../pages/notifications/NotificationsPage"
 import MemberDashboard from "../pages/member/dashboard/MemberDashboard"
 import BrowseBooksPage from "../pages/member/books/BrowseBooksPage"
 import MyLoansPage from "../pages/member/loans/MyLoansPage"
 import MyReservationsPage from "../pages/member/reservations/MyReservationsPage"
 import MyFinesPage from "../pages/member/fines/MyFinesPage"
+import MyNotificationsPage from "../pages/member/notifications/MyNotificationsPage"
 import ProtectedRoute from "./ProtectedRoute"
 
 export default function AppRoutes() {
@@ -86,6 +88,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute role="ADMIN">
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
 
 
       <Route
@@ -125,6 +135,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute role="MEMBER">
             <MyFinesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/notifications"
+        element={
+          <ProtectedRoute role="MEMBER">
+            <MyNotificationsPage />
           </ProtectedRoute>
         }
       />

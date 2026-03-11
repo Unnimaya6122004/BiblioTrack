@@ -1,10 +1,11 @@
-import { CalendarDays, Mail, Menu, Phone, Shield, User } from "lucide-react"
+import { Bell, CalendarDays, Mail, Menu, Phone, Shield, User } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 import Modal from "../ui/Modal/Modal"
 import styles from "./DashboardNavbar.module.css"
-import responsive from "../../styles/responsive.module.css"
 import {
   findUserByEmail,
+  getUnreadNotificationCount,
   getUserById,
   mapRoleForUi,
   type UserDto
@@ -20,6 +21,7 @@ import {
   getStoredToken,
   setStoredUserId
 } from "../../state/authState"
+import { subscribeNotificationsUpdated } from "../../state/notificationsState"
 
 type Props = {
   mobileMenuOpen: boolean
@@ -35,11 +37,14 @@ export default function AdminNavbar({
   const [profile, setProfile] = useState<UserDto | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileError, setProfileError] = useState("")
+  const [unreadCount, setUnreadCount] = useState(0)
   const token = getStoredToken()
   const payload = token ? decodeToken(token) : null
   const email = getStoredEmail() || extractEmailFromPayload(payload)
   const role = getStoredRole() ?? extractRoleFromPayload(payload) ?? "ADMIN"
   const storedUserId = getStoredUserId()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -76,7 +81,25 @@ export default function AdminNavbar({
 
     void loadProfile()
   }, [email, openModal, storedUserId])
-  
+
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const count = await getUnreadNotificationCount()
+        setUnreadCount(count)
+      } catch {
+        setUnreadCount(0)
+      }
+    }
+
+    void loadUnreadCount()
+
+    const unsubscribe = subscribeNotificationsUpdated(() => {
+      void loadUnreadCount()
+    })
+
+    return unsubscribe
+  }, [location.pathname])
 
   const roleLabel = profile?.role ? mapRoleForUi(profile.role) : role
   const createdAtLabel = profile?.createdAt
@@ -105,7 +128,7 @@ export default function AdminNavbar({
   return (
     <>
       <div className={styles.navbar}>
-        <div className={`${styles.inner} ${responsive.container}`}>
+        <div className={styles.inner}>
 
           <div className={styles.leftSection}>
 
@@ -122,16 +145,33 @@ export default function AdminNavbar({
           {/* Right Side */}
           <div className={styles.rightSection}>
 
-            <span className={styles.welcomeText}>
-  Welcome, {profile?.fullName ?? "Admin"}
-</span>
+            <div className={styles.iconActions}>
+              <button
+                onClick={() => navigate("/notifications")}
+                className={styles.notificationButton}
+                aria-label="Open notifications"
+              >
+                <Bell size={20} />
 
-            <button
-              onClick={() => setOpenModal(true)}
-              className={styles.profileButton}
-            >
-              <User size={20} />
-            </button>
+                {unreadCount > 0 && (
+                  <span className={styles.notificationBadge}>
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setOpenModal(true)}
+                className={styles.profileButton}
+                aria-label="Open profile"
+              >
+                <User size={20} />
+              </button>
+            </div>
+
+            <span className={styles.welcomeText}>
+              Welcome, {profile?.fullName ?? "Admin"}
+            </span>
 
           </div>
         </div>

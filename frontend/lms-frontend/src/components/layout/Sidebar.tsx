@@ -15,6 +15,7 @@ import {
   Repeat,
   CalendarCheck,
   AlertTriangle,
+  Bell,
   LogOut
 } from "lucide-react"
 import styles from "./Sidebar.module.css"
@@ -58,6 +59,7 @@ export default function Sidebar({
     { name: "Loans", path: "/loans", icon: Repeat },
     { name: "Reservations", path: "/reservations", icon: CalendarCheck },
     { name: "Fines", path: "/fines", icon: AlertTriangle },
+    { name: "Notifications", path: "/notifications", icon: Bell },
   ]
 
   const handleLogout = async () => {
