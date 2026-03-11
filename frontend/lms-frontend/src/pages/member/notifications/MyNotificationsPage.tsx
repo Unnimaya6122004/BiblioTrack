@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Bell, MailOpen } from "lucide-react"
 
 import MemberLayout from "../../../components/layout/MemberLayout"
 import {
@@ -8,6 +9,7 @@ import {
 } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
 import { emitNotificationsUpdated } from "../../../state/notificationsState"
+import styles from "../MemberPages.module.css"
 
 type NotificationCard = {
   id: number
@@ -31,6 +33,7 @@ export default function MyNotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationCard[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const unreadCount = notifications.filter((notification) => !notification.read).length
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -84,66 +87,89 @@ export default function MyNotificationsPage() {
 
   return (
     <MemberLayout>
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Notifications</h1>
-        <p className="text-gray-500">Central messages from library admin</p>
+      <div className={styles.page}>
+        <section className={styles.heroCard}>
+          <div className={styles.heroContent}>
+            <p className={styles.eyebrow}>Member Messages</p>
+            <h1 className={styles.heroTitle}>Notifications</h1>
+            <p className={styles.heroDescription}>
+              Central updates from library administrators and system alerts.
+            </p>
+
+            <div className={styles.heroMetaRow}>
+              <span className={styles.heroMetaPill}>
+                <Bell size={14} />
+                Unread {unreadCount}
+              </span>
+              <span className={styles.heroMetaPill}>
+                <MailOpen size={14} />
+                Total {notifications.length}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {loading && (
+          <p className={`${styles.stateMessage} ${styles.stateInfo}`}>Loading notifications...</p>
+        )}
+
+        {error && (
+          <p className={`${styles.stateMessage} ${styles.stateError}`}>{error}</p>
+        )}
+
+        {notifications.length === 0 ? (
+          <div className={styles.emptyCard}>
+            No notifications yet.
+          </div>
+        ) : (
+          <div className={styles.notificationList}>
+            {notifications.map((notification) => (
+              <article
+                key={notification.id}
+                className={`${styles.notificationCard} ${
+                  notification.read ? "" : styles.notificationCardUnread
+                }`}
+              >
+                <div className={styles.notificationHeader}>
+                  <h2 className={styles.notificationTitle}>
+                    {notification.title}
+                  </h2>
+                  <div className={styles.notificationHeaderRight}>
+                    <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
+                      {notification.read ? "Read" : "Unread"}
+                    </span>
+                    <p className={styles.notificationDate}>{notification.createdAt}</p>
+                  </div>
+                </div>
+
+                <p className={styles.notificationMessage}>
+                  {notification.message}
+                </p>
+
+                <p className={styles.notificationMeta}>
+                  Sent by: {notification.createdBy}
+                </p>
+
+                <div className={styles.notificationFooter}>
+                  {notification.read ? (
+                    <p className={styles.notificationMeta}>Read at: {notification.readAt}</p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleMarkRead(notification.id)
+                      }}
+                      className={styles.primaryButton}
+                    >
+                      Mark as Read
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading notifications...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {notifications.length === 0 ? (
-        <div className="rounded-xl border bg-white p-6 text-sm text-gray-500">
-          No notifications yet.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {notifications.map((notification) => (
-            <article
-              key={notification.id}
-              className={`rounded-xl border p-4 shadow-sm ${
-                notification.read ? "bg-white" : "bg-blue-50"
-              }`}
-            >
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-[#0f1f3d]">
-                  {notification.title}
-                </h2>
-                <p className="text-xs text-gray-500">{notification.createdAt}</p>
-              </div>
-
-              <p className="mb-3 whitespace-pre-wrap break-words text-sm text-gray-700">
-                {notification.message}
-              </p>
-
-              <p className="text-xs text-gray-500">
-                Sent by: {notification.createdBy}
-              </p>
-
-              <div className="mt-3">
-                {notification.read ? (
-                  <p className="text-xs text-gray-500">Read at: {notification.readAt}</p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleMarkRead(notification.id)
-                    }}
-                    className="rounded-md bg-[#0f1f3d] px-3 py-1 text-sm text-white"
-                  >
-                    Mark as Read
-                  </button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
     </MemberLayout>
   )
 }

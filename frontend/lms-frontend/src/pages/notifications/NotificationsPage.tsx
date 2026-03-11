@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { BellRing, Layers3, Search, Send } from "lucide-react"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import Table from "../../components/ui/Table/Table"
@@ -10,6 +11,7 @@ import {
 } from "../../api/lmsApi"
 import { toErrorMessage } from "../../api/client"
 import { emitNotificationsUpdated } from "../../state/notificationsState"
+import pageStyles from "../../styles/adminPage.module.css"
 
 type NotificationRow = {
   id: number
@@ -33,6 +35,7 @@ const toDateTime = (value?: string | null) => {
 export default function NotificationsPage() {
   const [title, setTitle] = useState("")
   const [message, setMessage] = useState("")
+  const [search, setSearch] = useState("")
   const [notifications, setNotifications] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -105,6 +108,23 @@ export default function NotificationsPage() {
     }
   }
 
+  const filteredNotifications = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+
+    if (!normalizedSearch) {
+      return notifications
+    }
+
+    return notifications.filter((item) =>
+      String(item.id).includes(normalizedSearch) ||
+      item.title.toLowerCase().includes(normalizedSearch) ||
+      item.message.toLowerCase().includes(normalizedSearch) ||
+      item.createdBy.toLowerCase().includes(normalizedSearch) ||
+      item.status.toLowerCase().includes(normalizedSearch) ||
+      item.createdAt.toLowerCase().includes(normalizedSearch)
+    )
+  }, [notifications, search])
+
   const columns = [
     { header: "ID", accessor: "id" },
     { header: "Date", accessor: "createdAt" },
@@ -116,7 +136,7 @@ export default function NotificationsPage() {
         const notification = row as NotificationRow
 
         return (
-          <p className="max-w-xl whitespace-pre-wrap break-words text-sm text-gray-700">
+          <p className="max-w-xl whitespace-pre-wrap break-words text-sm text-slate-700">
             {notification.message}
           </p>
         )
@@ -131,7 +151,7 @@ export default function NotificationsPage() {
         const notification = row as NotificationRow
 
         if (notification.read) {
-          return <span className="text-xs text-gray-500">Read at {notification.readAt}</span>
+          return <span className="text-xs text-slate-500">Read at {notification.readAt}</span>
         }
 
         return (
@@ -140,7 +160,7 @@ export default function NotificationsPage() {
             onClick={() => {
               void handleMarkRead(notification.id)
             }}
-            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+            className={pageStyles.actionLink}
           >
             Mark as Read
           </button>
@@ -149,63 +169,109 @@ export default function NotificationsPage() {
     }
   ]
 
+  const unreadCount = notifications.filter((item) => !item.read).length
+
   return (
     <DashboardLayout>
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Notifications</h1>
-        <p className="text-gray-500">Send centralized messages to all members</p>
-      </div>
+      <div className={pageStyles.page}>
 
-      <form onSubmit={handleSend} className="mb-8 rounded-xl border bg-white p-4">
-        <h2 className="mb-4 text-lg font-semibold">Send New Notification</h2>
-
-        <div className="mb-4 grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-sm text-gray-600">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Library notice title"
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-              maxLength={150}
-            />
+        <section className={pageStyles.hero}>
+          <div className={pageStyles.heroContent}>
+            <p className={pageStyles.heroEyebrow}>Communication Center</p>
+            <h1 className={pageStyles.heroTitle}>Notifications</h1>
+            <p className={pageStyles.heroSubtitle}>
+              Send centralized updates and monitor read/unread communication status.
+            </p>
           </div>
 
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-sm text-gray-600">Message</label>
-            <textarea
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              placeholder="Write the message members should receive..."
-              className="min-h-32 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-              maxLength={2000}
-            />
+          <div className={pageStyles.heroActions}>
+            <span className={pageStyles.metaChip}>
+              <BellRing size={13} />
+              Unread {unreadCount}
+            </span>
           </div>
+        </section>
+
+        <form onSubmit={handleSend} className={pageStyles.formCard}>
+          <h2 className={pageStyles.formTitle}>Send New Notification</h2>
+
+          <div className={pageStyles.formGrid}>
+            <div>
+              <label className={pageStyles.label}>Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Library notice title"
+                className={pageStyles.input}
+                maxLength={150}
+                required
+              />
+            </div>
+
+            <div>
+              <label className={pageStyles.label}>Message</label>
+              <textarea
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                placeholder="Write the message members should receive..."
+                className={`${pageStyles.input} ${pageStyles.textArea}`}
+                maxLength={2000}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <button
+              type="submit"
+              disabled={submitting}
+              className={pageStyles.primaryButton}
+            >
+              <Send size={15} />
+              {submitting ? "Sending..." : "Send Notification"}
+            </button>
+          </div>
+        </form>
+
+        <section className={pageStyles.controlsCard}>
+          <div className={pageStyles.controlsTopRow}>
+            <div className={pageStyles.searchWrap}>
+              <Search size={16} className={pageStyles.searchIcon} />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by title, message, sender, status..."
+                className={pageStyles.searchInput}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className={pageStyles.metaChip}>
+                <Layers3 size={13} />
+                Showing {filteredNotifications.length}
+              </span>
+              <span className={pageStyles.metaChip}>Total {notifications.length}</span>
+            </div>
+          </div>
+        </section>
+
+        {loading && (
+          <p className={pageStyles.infoText}>Loading notifications...</p>
+        )}
+
+        {error && (
+          <p className={pageStyles.errorText}>{error}</p>
+        )}
+
+        {success && (
+          <p className={pageStyles.successText}>{success}</p>
+        )}
+
+        <div className={pageStyles.tableSurface}>
+          <Table columns={columns} data={filteredNotifications} />
         </div>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-[#0f1f3d] px-4 py-2 text-white disabled:opacity-70"
-        >
-          {submitting ? "Sending..." : "Send Notification"}
-        </button>
-      </form>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading notifications...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {success && (
-        <p className="mb-4 text-sm text-green-700">{success}</p>
-      )}
-
-      <Table columns={columns} data={notifications} />
+      </div>
     </DashboardLayout>
   )
 }

@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react"
-import Input from "../../../components/ui/Input/Input"
-import Button from "../../../components/ui/Button/Button"
 import {
   createBook,
   getAuthors,
@@ -11,7 +9,6 @@ import {
   updateBook
 } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../utils/api"
-import responsive from "../../../styles/responsive.module.css"
 
 type EditableBook = {
   id: number
@@ -37,7 +34,6 @@ function parseIdList(value: string): number[] {
 }
 
 export default function AddBookForm({ onClose, onCreated, editingBook }: Props) {
-
   const [title, setTitle] = useState("")
   const [isbn, setIsbn] = useState("")
   const [authorIds, setAuthorIds] = useState("")
@@ -118,8 +114,8 @@ export default function AddBookForm({ onClose, onCreated, editingBook }: Props) 
     setCategoryIds("")
   }, [editingBook])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
 
     const payload = {
       title: title.trim(),
@@ -157,82 +153,89 @@ export default function AddBookForm({ onClose, onCreated, editingBook }: Props) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Title
+          </label>
 
-      <div>
-        <label className="text-sm text-gray-600">
-          Title
-        </label>
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Book title"
+            list="book-title-suggestions"
+            required
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          />
+          <datalist id="book-title-suggestions">
+            {titleSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
 
-        <Input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Book title"
-          list="book-title-suggestions"
-          required
-        />
-        <datalist id="book-title-suggestions">
-          {titleSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-      </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            ISBN
+          </label>
 
-      <div>
-        <label className="text-sm text-gray-600">
-          ISBN
-        </label>
+          <input
+            value={isbn}
+            onChange={(event) => setIsbn(event.target.value)}
+            placeholder="ISBN number"
+            list="book-isbn-suggestions"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          />
+          <datalist id="book-isbn-suggestions">
+            {isbnSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
 
-        <Input
-          value={isbn}
-          onChange={(e) => setIsbn(e.target.value)}
-          placeholder="ISBN number"
-          list="book-isbn-suggestions"
-        />
-        <datalist id="book-isbn-suggestions">
-          {isbnSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-      </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Author IDs
+          </label>
 
-      <div>
-        <label className="text-sm text-gray-600">
-          Author IDs
-        </label>
+          <input
+            value={authorIds}
+            onChange={(event) => setAuthorIds(event.target.value)}
+            placeholder="Example: 1,2"
+            list="author-id-suggestions"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          />
+          <datalist id="author-id-suggestions">
+            {authorSuggestions.map((author) => (
+              <option key={author.id} value={String(author.id)}>
+                {author.name}
+              </option>
+            ))}
+          </datalist>
+          <p className="mt-1 text-xs text-slate-500">Comma-separated IDs</p>
+        </div>
 
-        <Input
-          value={authorIds}
-          onChange={(e) => setAuthorIds(e.target.value)}
-          placeholder="Example: 1,2"
-          list="author-id-suggestions"
-        />
-        <datalist id="author-id-suggestions">
-          {authorSuggestions.map((author) => (
-            <option key={author.id} value={String(author.id)}>
-              {author.name}
-            </option>
-          ))}
-        </datalist>
-      </div>
+        <div className="md:col-span-2">
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Category IDs
+          </label>
 
-      <div>
-        <label className="text-sm text-gray-600">
-          Category IDs
-        </label>
-
-        <Input
-          value={categoryIds}
-          onChange={(e) => setCategoryIds(e.target.value)}
-          placeholder="Example: 1,3"
-          list="category-id-suggestions"
-        />
-        <datalist id="category-id-suggestions">
-          {categorySuggestions.map((category) => (
-            <option key={category.id} value={String(category.id)}>
-              {category.name}
-            </option>
-          ))}
-        </datalist>
+          <input
+            value={categoryIds}
+            onChange={(event) => setCategoryIds(event.target.value)}
+            placeholder="Example: 1,3"
+            list="category-id-suggestions"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          />
+          <datalist id="category-id-suggestions">
+            {categorySuggestions.map((category) => (
+              <option key={category.id} value={String(category.id)}>
+                {category.name}
+              </option>
+            ))}
+          </datalist>
+          <p className="mt-1 text-xs text-slate-500">Comma-separated IDs</p>
+        </div>
       </div>
 
       {error && (
@@ -241,21 +244,27 @@ export default function AddBookForm({ onClose, onCreated, editingBook }: Props) 
         </p>
       )}
 
-      <div className={responsive.formActions}>
-
-        <Button type="button" onClick={onClose} disabled={loading}>
+      <div className="flex items-center justify-end gap-2 pt-1">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={loading}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-70"
+        >
           Cancel
-        </Button>
+        </button>
 
-        <Button type="submit" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-lg bg-[#0f1f3d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#162a52] disabled:opacity-70"
+        >
           {loading
             ? editingBook ? "Updating..." : "Adding..."
             : editingBook ? "Update Book" : "Add Book"
           }
-        </Button>
-
+        </button>
       </div>
-
     </form>
   )
 }

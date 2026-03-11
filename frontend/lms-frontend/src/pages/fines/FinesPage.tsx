@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Download, FileText, Layers3, Search } from "lucide-react"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import Table from "../../components/ui/Table/Table"
@@ -9,12 +10,14 @@ import { toErrorMessage } from "../../api/client"
 import { formatCurrency, formatDate } from "../../utils/formatters"
 import { downloadCsv, printTableAsPdf } from "../../utils/exporters"
 import useDebouncedValue from "../../hooks/useDebouncedValue"
+import pageStyles from "../../styles/adminPage.module.css"
 
 type FineRow = {
   id: number
   user: string
   loanId: number
   amount: string
+  amountRaw: number
   issued: string
   paid: string
   status: string
@@ -23,7 +26,6 @@ type FineRow = {
 type FineFilter = "ALL" | "UNPAID" | "PAID"
 
 export default function FinesPage() {
-
   const [fines, setFines] = useState<FineRow[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(false)
@@ -37,6 +39,7 @@ export default function FinesPage() {
     id: fine.id,
     user: fine.userName,
     loanId: fine.loanId,
+    amountRaw: Number(fine.amount),
     amount: formatCurrency(fine.amount),
     issued: formatDate(fine.issuedDate),
     paid: formatDate(fine.paidDate),
@@ -107,7 +110,7 @@ export default function FinesPage() {
 
   useEffect(() => {
     void loadFines()
-  }, [filter, debouncedSearch])
+  }, [filter, debouncedSearch, toast]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePay = async (id: number) => {
     try {
@@ -181,14 +184,14 @@ export default function FinesPage() {
         const fine = row as FineRow
 
         if (fine.status !== "UNPAID") {
-          return <span className="text-sm text-gray-400">No action</span>
+          return <span className="text-xs text-slate-400">No action</span>
         }
 
         return (
           <button
             type="button"
             onClick={() => setPayId(fine.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className={pageStyles.actionLink}
           >
             Mark Paid
           </button>
@@ -197,93 +200,110 @@ export default function FinesPage() {
     }
   ]
 
+  const unpaidCount = fines.filter((fine) => fine.status === "UNPAID").length
+  const paidCount = fines.filter((fine) => fine.status === "PAID").length
+  const totalExposure = fines
+    .filter((fine) => fine.status === "UNPAID")
+    .reduce((sum, fine) => sum + fine.amountRaw, 0)
+
   return (
     <DashboardLayout>
+      <div className={pageStyles.page}>
 
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Fines
-          </h1>
+        <section className={pageStyles.hero}>
+          <div className={pageStyles.heroContent}>
+            <p className={pageStyles.heroEyebrow}>Financial Oversight</p>
+            <h1 className={pageStyles.heroTitle}>Fines</h1>
+            <p className={pageStyles.heroSubtitle}>
+              Track unpaid liabilities, settlement flow, and issue-level fine records.
+            </p>
+          </div>
 
-          <p className="text-gray-500">
-            Manage overdue fines
-          </p>
+          <div className={pageStyles.heroActions}>
+            <button
+              type="button"
+              onClick={() => {
+                void handleExportCsv()
+              }}
+              className={pageStyles.primaryButton}
+            >
+              <Download size={15} />
+              Export CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void handleExportPdf()
+              }}
+              className={pageStyles.primaryButton}
+            >
+              <FileText size={15} />
+              Export PDF
+            </button>
+          </div>
+        </section>
+
+        <section className={pageStyles.controlsCard}>
+          <div className={pageStyles.controlsTopRow}>
+            <div className={pageStyles.searchWrap}>
+              <Search size={16} className={pageStyles.searchIcon} />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by user, loan id, amount, status..."
+                className={pageStyles.searchInput}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className={pageStyles.metaChip}>
+                <Layers3 size={13} />
+                Showing {fines.length}
+              </span>
+              <span className={pageStyles.metaChip}>Unpaid {unpaidCount}</span>
+              <span className={pageStyles.metaChip}>Paid {paidCount}</span>
+              <span className={pageStyles.metaChip}>Exposure {formatCurrency(totalExposure)}</span>
+            </div>
+          </div>
+
+          <div className={pageStyles.chipRow}>
+            {(["ALL", "UNPAID", "PAID"] as FineFilter[]).map((item) => (
+              <button
+                key={item}
+                onClick={() => setFilter(item)}
+                className={`${pageStyles.chipButton} ${filter === item ? pageStyles.chipButtonActive : ""}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {loading && (
+          <p className={pageStyles.infoText}>Loading fines...</p>
+        )}
+
+        {error && (
+          <p className={pageStyles.errorText}>{error}</p>
+        )}
+
+        <div className={pageStyles.tableSurface}>
+          <Table columns={columns} data={fines} />
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              void handleExportCsv()
+        {payId !== null && (
+          <ConfirmModal
+            title="Mark Fine as Paid"
+            message="Are you sure you want to mark this fine as paid?"
+            confirmText="Mark Paid"
+            cancelText="Cancel"
+            onCancel={() => setPayId(null)}
+            onConfirm={() => {
+              void handlePay(payId)
             }}
-            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
-          >
-            Export CSV
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              void handleExportPdf()
-            }}
-            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
-          >
-            Export PDF
-          </button>
-        </div>
+          />
+        )}
       </div>
-
-      {/* Status Filters */}
-      <div className="flex gap-3 mb-6">
-        {(["ALL", "UNPAID", "PAID"] as FineFilter[]).map((item) => (
-          <button
-            key={item}
-            onClick={() => setFilter(item)}
-            className={`px-4 py-2 rounded-lg text-sm border
-              ${filter === item
-                ? "bg-[#0f1f3d] text-white"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
-
-      <div className="mb-6">
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search by user, loan id, amount, status..."
-          className="border px-4 py-2 rounded-lg w-80 outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading fines...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {/* Table */}
-      <Table columns={columns} data={fines} />
-
-      {payId !== null && (
-        <ConfirmModal
-          title="Mark Fine as Paid"
-          message="Are you sure you want to mark this fine as paid?"
-          confirmText="Mark Paid"
-          cancelText="Cancel"
-          onCancel={() => setPayId(null)}
-          onConfirm={() => {
-            void handlePay(payId)
-          }}
-        />
-      )}
-
     </DashboardLayout>
   )
 }

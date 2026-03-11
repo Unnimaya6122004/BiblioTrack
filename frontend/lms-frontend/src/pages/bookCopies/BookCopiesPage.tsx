@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Layers3, Plus, Search, Trash2 } from "lucide-react"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import Table from "../../components/ui/Table/Table"
@@ -9,6 +9,7 @@ import ConfirmModal from "../../components/ui/Modal/ConfirmModal"
 import { deleteBookCopy, getBookCopies, type BookCopyDto } from "../../api/lmsApi"
 import { toErrorMessage } from "../../utils/api"
 import useDebouncedValue from "../../hooks/useDebouncedValue"
+import pageStyles from "../../styles/adminPage.module.css"
 
 type CopyRow = {
   id: number
@@ -52,9 +53,7 @@ export default function BookCopiesPage() {
             status: copy.status
           }))
           .sort((a, b) => a.id - b.id)
-          .filter((copy) =>
-            copy.barcode.toLowerCase().includes(normalizedSearch)
-          )
+          .filter((copy) => copy.barcode.toLowerCase().includes(normalizedSearch))
 
         const start = page * PAGE_SIZE
         const end = start + PAGE_SIZE
@@ -92,7 +91,7 @@ export default function BookCopiesPage() {
 
   useEffect(() => {
     void loadCopies()
-  }, [debouncedSearch, page])
+  }, [debouncedSearch, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (id: number) => {
     try {
@@ -120,10 +119,10 @@ export default function BookCopiesPage() {
           <button
             type="button"
             onClick={() => setDeleteId(copy.id)}
-            className="text-red-500 hover:text-red-700"
+            className={`${pageStyles.iconButton} ${pageStyles.dangerIconButton}`}
             aria-label={`Delete copy ${copy.id}`}
           >
-            <Trash2 size={18} />
+            <Trash2 size={16} />
           </button>
         )
       }
@@ -132,114 +131,123 @@ export default function BookCopiesPage() {
 
   return (
     <DashboardLayout>
+      <div className={pageStyles.page}>
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+        <section className={pageStyles.hero}>
+          <div className={pageStyles.heroContent}>
+            <p className={pageStyles.heroEyebrow}>Catalog Control</p>
+            <h1 className={pageStyles.heroTitle}>Book Copies</h1>
+            <p className={pageStyles.heroSubtitle}>
+              Track physical inventory, rack locations, and copy-level statuses.
+            </p>
+          </div>
 
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Book Copies
-          </h1>
-
-          <p className="text-gray-500">
-            Manage physical copies
-          </p>
-        </div>
-
-        <button
-          onClick={() => setOpenModal(true)}
-          className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52] transition"
-        >
-          + Add Copy
-        </button>
-
-      </div>
-
-      {/* Search */}
-      <div className="mb-6">
-        <input
-          value={search}
-          onChange={(e) => {
-            setPage(0)
-            setSearch(e.target.value)
-          }}
-          placeholder="Search by barcode..."
-          className="border px-4 py-2 rounded-lg w-80 outline-none"
-        />
-      </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading copies...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {/* Table */}
-      <Table columns={columns} data={copies} />
-
-      <div className="mt-6 flex items-center justify-between">
-        <button
-          onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-          disabled={page === 0}
-          className="border px-3 py-2 rounded-lg disabled:opacity-50"
-        >
-          Previous
-        </button>
-
-        <div className="flex gap-2">
-          {Array.from({ length: totalPages }, (_, index) => (
+          <div className={pageStyles.heroActions}>
             <button
-              key={index}
-              onClick={() => setPage(index)}
-              className={`px-3 py-1 rounded-lg border ${
-                page === index ? "bg-[#0f1f3d] text-white" : "bg-white"
-              }`}
+              onClick={() => setOpenModal(true)}
+              className={pageStyles.primaryButton}
             >
-              {index + 1}
+              <Plus size={16} />
+              Add Copy
             </button>
-          ))}
+          </div>
+        </section>
+
+        <section className={pageStyles.controlsCard}>
+          <div className={pageStyles.controlsTopRow}>
+            <div className={pageStyles.searchWrap}>
+              <Search size={16} className={pageStyles.searchIcon} />
+              <input
+                value={search}
+                onChange={(event) => {
+                  setPage(0)
+                  setSearch(event.target.value)
+                }}
+                placeholder="Search by barcode..."
+                className={pageStyles.searchInput}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className={pageStyles.metaChip}>
+                <Layers3 size={13} />
+                Showing {copies.length}
+              </span>
+              <span className={pageStyles.metaChip}>
+                Page {totalPages === 0 ? 0 : page + 1} of {totalPages}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {loading && (
+          <p className={pageStyles.infoText}>Loading copies...</p>
+        )}
+
+        {error && (
+          <p className={pageStyles.errorText}>{error}</p>
+        )}
+
+        <div className={pageStyles.tableSurface}>
+          <Table columns={columns} data={copies} />
         </div>
 
-        <button
-          onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-          disabled={totalPages === 0 || page >= totalPages - 1}
-          className="border px-3 py-2 rounded-lg disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+        <div className={pageStyles.pagination}>
+          <button
+            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+            disabled={page === 0}
+            className={pageStyles.pageNavButton}
+          >
+            Previous
+          </button>
 
-      {/* Add Copy Modal */}
-      {openModal && (
-        <Modal onClose={() => setOpenModal(false)}>
+          <div className={pageStyles.pageNumbers}>
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => setPage(index)}
+                className={`${pageStyles.pageNumber} ${page === index ? pageStyles.pageNumberActive : ""}`}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
 
-          <h2 className="text-lg font-semibold mb-6">
-            Add Book Copy
-          </h2>
+          <button
+            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+            disabled={totalPages === 0 || page >= totalPages - 1}
+            className={pageStyles.pageNavButton}
+          >
+            Next
+          </button>
+        </div>
 
-          <AddBookCopyForm
-            onClose={() => setOpenModal(false)}
-            onCreated={loadCopies}
+        {openModal && (
+          <Modal onClose={() => setOpenModal(false)}>
+            <h2 className={pageStyles.modalTitle}>
+              Add Book Copy
+            </h2>
+
+            <AddBookCopyForm
+              onClose={() => setOpenModal(false)}
+              onCreated={loadCopies}
+            />
+          </Modal>
+        )}
+
+        {deleteId !== null && (
+          <ConfirmModal
+            title="Delete Copy"
+            message="Are you sure you want to delete this copy?"
+            confirmText="Delete"
+            cancelText="Cancel"
+            onCancel={() => setDeleteId(null)}
+            onConfirm={() => {
+              void handleDelete(deleteId)
+            }}
           />
-
-        </Modal>
-      )}
-
-      {deleteId !== null && (
-        <ConfirmModal
-          title="Delete Copy"
-          message="Are you sure you want to delete this copy?"
-          confirmText="Delete"
-          cancelText="Cancel"
-          onCancel={() => setDeleteId(null)}
-          onConfirm={() => {
-            void handleDelete(deleteId)
-          }}
-        />
-      )}
-
+        )}
+      </div>
     </DashboardLayout>
   )
 }

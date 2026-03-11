@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react"
+import { Search, BookOpen } from "lucide-react"
 
 import MemberLayout from "../../../components/layout/MemberLayout"
 import Table from "../../../components/ui/Table/Table"
 import { getBooks, type BookDto } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
 import useDebouncedValue from "../../../hooks/useDebouncedValue"
+import styles from "../MemberPages.module.css"
 
 type BookRow = {
   id: number
@@ -58,42 +60,50 @@ export default function BrowseBooksPage() {
   return (
     <MemberLayout>
 
-      {/* Header */}
-      <div className="mb-8">
+      <div className={styles.page}>
+        <section className={styles.heroCard}>
+          <div className={styles.heroContent}>
+            <p className={styles.eyebrow}>Member Catalog</p>
+            <h1 className={styles.heroTitle}>Browse Books</h1>
+            <p className={styles.heroDescription}>
+              Explore titles in the library and quickly search by book name.
+            </p>
 
-        <h1 className="text-2xl font-semibold">
-          Browse Books
-        </h1>
+            <div className={styles.heroMetaRow}>
+              <span className={styles.heroMetaPill}>
+                <BookOpen size={14} />
+                {books.length} visible results
+              </span>
+            </div>
+          </div>
+        </section>
 
-        <p className="text-gray-500">
-          Explore books available in the library
-        </p>
+        <div className={styles.toolbarRow}>
+          <div className={styles.searchWrap}>
+            <Search size={16} className={styles.searchIcon} />
 
+            <input
+              type="text"
+              placeholder="Search books by title..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+        </div>
+
+        {loading && (
+          <p className={`${styles.stateMessage} ${styles.stateInfo}`}>Loading books...</p>
+        )}
+
+        {error && (
+          <p className={`${styles.stateMessage} ${styles.stateError}`}>{error}</p>
+        )}
+
+        <section className={styles.tableSection}>
+          <Table columns={columns} data={books} />
+        </section>
       </div>
-
-      {/* Search */}
-      <div className="mb-6">
-
-        <input
-          type="text"
-          placeholder="Search books by title..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border px-4 py-2 rounded-lg w-80 outline-none focus:ring-2 focus:ring-blue-500"
-        />
-
-      </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading books...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {/* Table */}
-      <Table columns={columns} data={books} />
 
     </MemberLayout>
   )

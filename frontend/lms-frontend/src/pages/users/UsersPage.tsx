@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Pencil, Trash2 } from "lucide-react"
+import { Layers3, Pencil, Plus, Search, Trash2 } from "lucide-react"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import Table from "../../components/ui/Table/Table"
@@ -25,6 +25,7 @@ import {
   getStoredUserId,
   getStoredToken
 } from "../../state/authState"
+import pageStyles from "../../styles/adminPage.module.css"
 
 type UserRow = {
   id: number
@@ -117,7 +118,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     void loadUsers()
-  }, [debouncedSearch, page])
+  }, [debouncedSearch, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const userHasAnyFine = async (userId: number): Promise<boolean> => {
     let pageIndex = 0
@@ -201,13 +202,13 @@ export default function UsersPage() {
         const user = row as UserRow
 
         if (!isAdmin) {
-          return <span className="text-sm text-gray-400">No action</span>
+          return <span className="text-xs text-slate-400">No action</span>
         }
 
         return (
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {currentAdminUserId !== null && user.id === currentAdminUserId ? (
-              <span className="text-sm text-gray-400">Current admin</span>
+              <span className="text-xs text-slate-400">Current admin</span>
             ) : (
               <button
                 type="button"
@@ -215,20 +216,20 @@ export default function UsersPage() {
                   setDeleteError("")
                   setDeleteId(user.id)
                 }}
-                className="text-red-500 hover:text-red-700"
+                className={`${pageStyles.iconButton} ${pageStyles.dangerIconButton}`}
                 aria-label={`Delete user ${user.fullName}`}
               >
-                <Trash2 size={18} />
+                <Trash2 size={14} />
               </button>
             )}
 
             <button
               type="button"
               onClick={() => openEditModal(user)}
-              className="text-blue-600 hover:text-blue-800"
+              className={pageStyles.iconButton}
               aria-label={`Edit user ${user.fullName}`}
             >
-              <Pencil size={18} />
+              <Pencil size={14} />
             </button>
           </div>
         )
@@ -236,131 +237,142 @@ export default function UsersPage() {
     }
   ]
 
+  const activeCount = users.filter((user) => user.status === "ACTIVE").length
+  const blockedCount = users.filter((user) => user.status === "BLOCKED").length
+
   return (
     <DashboardLayout>
+      <div className={pageStyles.page}>
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+        <section className={pageStyles.hero}>
+          <div className={pageStyles.heroContent}>
+            <p className={pageStyles.heroEyebrow}>Member Administration</p>
+            <h1 className={pageStyles.heroTitle}>Users</h1>
+            <p className={pageStyles.heroSubtitle}>
+              Manage member access, profile records, and user lifecycle status.
+            </p>
+          </div>
 
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Users
-          </h1>
+          {isAdmin && (
+            <div className={pageStyles.heroActions}>
+              <button
+                onClick={openCreateModal}
+                className={pageStyles.primaryButton}
+              >
+                <Plus size={16} />
+                Add User
+              </button>
+            </div>
+          )}
+        </section>
 
-          <p className="text-gray-500">
-            Manage library users
-          </p>
-        </div>
+        <section className={pageStyles.controlsCard}>
+          <div className={pageStyles.controlsTopRow}>
+            <div className={pageStyles.searchWrap}>
+              <Search size={16} className={pageStyles.searchIcon} />
+              <input
+                placeholder="Search by name..."
+                value={search}
+                onChange={(event) => {
+                  setPage(0)
+                  setSearch(event.target.value)
+                }}
+                className={pageStyles.searchInput}
+              />
+            </div>
 
-        {isAdmin && (
-          <button
-            onClick={openCreateModal}
-            className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52] transition"
-          >
-            + Add User
-          </button>
+            <div className="flex flex-wrap gap-2">
+              <span className={pageStyles.metaChip}>
+                <Layers3 size={13} />
+                Showing {users.length}
+              </span>
+              <span className={pageStyles.metaChip}>Active {activeCount}</span>
+              <span className={pageStyles.metaChip}>Blocked {blockedCount}</span>
+            </div>
+          </div>
+        </section>
+
+        {loading && (
+          <p className={pageStyles.infoText}>Loading users...</p>
         )}
 
-      </div>
+        {error && (
+          <p className={pageStyles.errorText}>{error}</p>
+        )}
 
-      {/* Search */}
-      <div className="mb-6">
-        <input
-          placeholder="Search by name..."
-          value={search}
-          onChange={(e) => {
-            setPage(0)
-            setSearch(e.target.value)
-          }}
-          className="border px-4 py-2 rounded-lg w-80 outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading users...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {/* Table */}
-      <Table columns={columns} data={users} />
-
-      <div className="mt-6 flex items-center justify-between">
-        <button
-          onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-          disabled={page === 0}
-          className="border px-3 py-2 rounded-lg disabled:opacity-50"
-        >
-          Previous
-        </button>
-
-        <div className="flex gap-2">
-          {Array.from({ length: totalPages }, (_, index) => (
-            <button
-              key={index}
-              onClick={() => setPage(index)}
-              className={`px-3 py-1 rounded-lg border ${
-                page === index ? "bg-[#0f1f3d] text-white" : "bg-white"
-              }`}
-            >
-              {index + 1}
-            </button>
-          ))}
+        <div className={pageStyles.tableSurface}>
+          <Table columns={columns} data={users} />
         </div>
 
-        <button
-          onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-          disabled={totalPages === 0 || page >= totalPages - 1}
-          className="border px-3 py-2 rounded-lg disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+        <div className={pageStyles.pagination}>
+          <button
+            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+            disabled={page === 0}
+            className={pageStyles.pageNavButton}
+          >
+            Previous
+          </button>
 
-      {/* Add/Edit User Modal */}
-      {openModal && (
-        <Modal
-          onClose={() => {
-            setOpenModal(false)
-            setEditingUser(null)
-          }}
-        >
+          <div className={pageStyles.pageNumbers}>
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => setPage(index)}
+                className={`${pageStyles.pageNumber} ${page === index ? pageStyles.pageNumberActive : ""}`}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
 
-          <h2 className="text-lg font-semibold mb-6">
-            {editingUser ? "Edit User" : "Add New User"}
-          </h2>
+          <button
+            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+            disabled={totalPages === 0 || page >= totalPages - 1}
+            className={pageStyles.pageNavButton}
+          >
+            Next
+          </button>
+        </div>
 
-          <AddUserForm
-            editingUser={editingUser}
+        {openModal && (
+          <Modal
             onClose={() => {
               setOpenModal(false)
               setEditingUser(null)
             }}
-            onCreated={loadUsers}
+          >
+            <h2 className={pageStyles.modalTitle}>
+              {editingUser ? "Edit User" : "Add New User"}
+            </h2>
+
+            <AddUserForm
+              editingUser={editingUser}
+              onClose={() => {
+                setOpenModal(false)
+                setEditingUser(null)
+              }}
+              onCreated={loadUsers}
+            />
+          </Modal>
+        )}
+
+        {deleteId !== null && (
+          <ConfirmModal
+            title="Delete User"
+            message="Are you sure you want to delete this user?"
+            errorMessage={deleteError}
+            confirmText="Delete"
+            cancelText="Cancel"
+            onCancel={() => {
+              setDeleteError("")
+              setDeleteId(null)
+            }}
+            onConfirm={() => {
+              void handleDelete(deleteId)
+            }}
           />
-
-        </Modal>
-      )}
-
-      {deleteId !== null && (
-        <ConfirmModal
-          title="Delete User"
-          message="Are you sure you want to delete this user?"
-          errorMessage={deleteError}
-          confirmText="Delete"
-          cancelText="Cancel"
-          onCancel={() => {
-            setDeleteError("")
-            setDeleteId(null)
-          }}
-          onConfirm={() => {
-            void handleDelete(deleteId)
-          }}
-        />
-      )}
-
+        )}
+      </div>
     </DashboardLayout>
   )
 }

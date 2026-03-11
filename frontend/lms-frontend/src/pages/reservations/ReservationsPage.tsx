@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Download, FileText, Layers3, Plus, Search, Trash2 } from "lucide-react"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import Table from "../../components/ui/Table/Table"
@@ -17,6 +17,7 @@ import { toErrorMessage } from "../../utils/api"
 import { formatDate } from "../../utils/formatters"
 import { downloadCsv, printTableAsPdf } from "../../utils/exporters"
 import useDebouncedValue from "../../hooks/useDebouncedValue"
+import pageStyles from "../../styles/adminPage.module.css"
 
 type ReservationRow = {
   id: number
@@ -143,7 +144,7 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     void loadReservations()
-  }, [page, filter, debouncedSearch])
+  }, [page, filter, debouncedSearch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCancel = async (id: number) => {
     try {
@@ -211,171 +212,178 @@ export default function ReservationsPage() {
         const reservation = row as ReservationRow
 
         if (reservation.status !== "ACTIVE") {
-          return <span className="text-sm text-gray-400">No action</span>
+          return <span className="text-xs text-slate-400">No action</span>
         }
 
         return (
           <button
             type="button"
             onClick={() => setCancelId(reservation.id)}
-            className="text-red-500 hover:text-red-700"
+            className={`${pageStyles.iconButton} ${pageStyles.dangerIconButton}`}
           >
-            <Trash2 size={18} />
+            <Trash2 size={14} />
           </button>
         )
       }
     }
   ]
 
+  const activeCount = reservations.filter((reservation) => reservation.status === "ACTIVE").length
+  const completedCount = reservations.filter((reservation) => reservation.status === "COMPLETED").length
+
   return (
     <DashboardLayout>
+      <div className={pageStyles.page}>
 
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-8">
+        <section className={pageStyles.hero}>
+          <div className={pageStyles.heroContent}>
+            <p className={pageStyles.heroEyebrow}>Reservation Desk</p>
+            <h1 className={pageStyles.heroTitle}>Reservations</h1>
+            <p className={pageStyles.heroSubtitle}>
+              Manage active requests, lifecycle status, and reservation completion flow.
+            </p>
+          </div>
 
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Reservations
-          </h1>
-
-          <p className="text-gray-500">
-            Manage book reservations
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              void handleExportCsv()
-            }}
-            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
-          >
-            Export CSV
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              void handleExportPdf()
-            }}
-            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
-          >
-            Export PDF
-          </button>
-          <button
-            onClick={() => setOpenModal(true)}
-            className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52]"
-          >
-            + New Reservation
-          </button>
-        </div>
-
-      </div>
-
-      {/* Status Filters */}
-      <div className="flex gap-3 mb-6">
-        {(["ALL", "ACTIVE", "COMPLETED", "CANCELLED"] as ReservationFilter[]).map((item) => (
-          <button
-            key={item}
-            onClick={() => {
-              setPage(0)
-              setFilter(item)
-            }}
-            className={`px-4 py-2 rounded-lg text-sm border
-              ${filter === item
-                ? "bg-[#0f1f3d] text-white"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
-
-      <div className="mb-6">
-        <input
-          value={search}
-          onChange={(event) => {
-            setPage(0)
-            setSearch(event.target.value)
-          }}
-          placeholder="Search by user, book, status..."
-          className="border px-4 py-2 rounded-lg w-80 outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading reservations...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {/* Table */}
-      <Table columns={columns} data={reservations} />
-
-      <div className="mt-6 flex items-center justify-between">
-        <button
-          onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-          disabled={page === 0}
-          className="border px-3 py-2 rounded-lg disabled:opacity-50"
-        >
-          Previous
-        </button>
-
-        <div className="flex gap-2">
-          {Array.from({ length: totalPages }, (_, index) => (
+          <div className={pageStyles.heroActions}>
             <button
-              key={index}
-              onClick={() => setPage(index)}
-              className={`px-3 py-1 rounded-lg border ${
-                page === index ? "bg-[#0f1f3d] text-white" : "bg-white"
-              }`}
+              type="button"
+              onClick={() => {
+                void handleExportCsv()
+              }}
+              className={pageStyles.primaryButton}
             >
-              {index + 1}
+              <Download size={15} />
+              Export CSV
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => {
+                void handleExportPdf()
+              }}
+              className={pageStyles.primaryButton}
+            >
+              <FileText size={15} />
+              Export PDF
+            </button>
+            <button
+              onClick={() => setOpenModal(true)}
+              className={pageStyles.primaryButton}
+            >
+              <Plus size={16} />
+              New Reservation
+            </button>
+          </div>
+        </section>
+
+        <section className={pageStyles.controlsCard}>
+          <div className={pageStyles.controlsTopRow}>
+            <div className={pageStyles.searchWrap}>
+              <Search size={16} className={pageStyles.searchIcon} />
+              <input
+                value={search}
+                onChange={(event) => {
+                  setPage(0)
+                  setSearch(event.target.value)
+                }}
+                placeholder="Search by user, book, status..."
+                className={pageStyles.searchInput}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className={pageStyles.metaChip}>
+                <Layers3 size={13} />
+                Showing {reservations.length}
+              </span>
+              <span className={pageStyles.metaChip}>Active {activeCount}</span>
+              <span className={pageStyles.metaChip}>Completed {completedCount}</span>
+            </div>
+          </div>
+
+          <div className={pageStyles.chipRow}>
+            {(["ALL", "ACTIVE", "COMPLETED", "CANCELLED"] as ReservationFilter[]).map((item) => (
+              <button
+                key={item}
+                onClick={() => {
+                  setPage(0)
+                  setFilter(item)
+                }}
+                className={`${pageStyles.chipButton} ${filter === item ? pageStyles.chipButtonActive : ""}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {loading && (
+          <p className={pageStyles.infoText}>Loading reservations...</p>
+        )}
+
+        {error && (
+          <p className={pageStyles.errorText}>{error}</p>
+        )}
+
+        <div className={pageStyles.tableSurface}>
+          <Table columns={columns} data={reservations} />
         </div>
 
-        <button
-          onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-          disabled={totalPages === 0 || page >= totalPages - 1}
-          className="border px-3 py-2 rounded-lg disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+        <div className={pageStyles.pagination}>
+          <button
+            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+            disabled={page === 0}
+            className={pageStyles.pageNavButton}
+          >
+            Previous
+          </button>
 
-      {/* Create Reservation Modal */}
-      {openModal && (
-        <Modal onClose={() => setOpenModal(false)}>
+          <div className={pageStyles.pageNumbers}>
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => setPage(index)}
+                className={`${pageStyles.pageNumber} ${page === index ? pageStyles.pageNumberActive : ""}`}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
 
-          <h2 className="text-lg font-semibold mb-6">
-            Create Reservation
-          </h2>
+          <button
+            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+            disabled={totalPages === 0 || page >= totalPages - 1}
+            className={pageStyles.pageNavButton}
+          >
+            Next
+          </button>
+        </div>
 
-          <AddReservationForm
-            onClose={() => setOpenModal(false)}
-            onCreated={loadReservations}
+        {openModal && (
+          <Modal onClose={() => setOpenModal(false)}>
+            <h2 className={pageStyles.modalTitle}>
+              Create Reservation
+            </h2>
+
+            <AddReservationForm
+              onClose={() => setOpenModal(false)}
+              onCreated={loadReservations}
+            />
+          </Modal>
+        )}
+
+        {cancelId !== null && (
+          <ConfirmModal
+            title="Cancel Reservation"
+            message="Are you sure you want to cancel this reservation?"
+            confirmText="Cancel Reservation"
+            cancelText="Keep"
+            onCancel={() => setCancelId(null)}
+            onConfirm={() => {
+              void handleCancel(cancelId)
+            }}
           />
-
-        </Modal>
-      )}
-
-      {cancelId !== null && (
-        <ConfirmModal
-          title="Cancel Reservation"
-          message="Are you sure you want to cancel this reservation?"
-          confirmText="Cancel Reservation"
-          cancelText="Keep"
-          onCancel={() => setCancelId(null)}
-          onConfirm={() => {
-            void handleCancel(cancelId)
-          }}
-        />
-      )}
-
+        )}
+      </div>
     </DashboardLayout>
   )
 }

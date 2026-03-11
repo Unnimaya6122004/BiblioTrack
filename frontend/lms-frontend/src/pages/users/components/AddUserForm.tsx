@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import { createUser, getUsers, updateUser } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../utils/api"
-import responsive from "../../../styles/responsive.module.css"
 
 type EditableUser = {
   id: number
@@ -103,8 +102,8 @@ export default function AddUserForm({ onClose, onCreated, editingUser }: Props) 
     setStatus("ACTIVE")
   }, [editingUser])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
 
     try {
       setLoading(true)
@@ -151,120 +150,115 @@ export default function AddUserForm({ onClose, onCreated, editingUser }: Props) 
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Name
+          </label>
 
-      {/* Name */}
-      <div>
-        <label className="block text-sm text-gray-600 mb-1">
-          Name
-        </label>
+          <input
+            type="text"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+            placeholder="Enter full name"
+            list="user-name-suggestions"
+            required
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          />
+          <datalist id="user-name-suggestions">
+            {nameSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
 
-        <input
-          type="text"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          placeholder="Enter full name"
-          list="user-name-suggestions"
-          required
-          className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <datalist id="user-name-suggestions">
-          {nameSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-      </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Email
+          </label>
 
-      {/* Email */}
-      <div>
-        <label className="block text-sm text-gray-600 mb-1">
-          Email
-        </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="Enter email"
+            list="user-email-suggestions"
+            required
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          />
+          <datalist id="user-email-suggestions">
+            {emailSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
 
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter email"
-          list="user-email-suggestions"
-          required
-          className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <datalist id="user-email-suggestions">
-          {emailSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-      </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Password {editingUser ? "(optional)" : ""}
+          </label>
 
-      {/* Password */}
-      <div>
-        <label className="block text-sm text-gray-600 mb-1">
-          Password {editingUser ? "(optional)" : ""}
-        </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder={editingUser ? "Leave blank to keep current password" : "At least 6 characters"}
+            required={!editingUser}
+            minLength={editingUser ? undefined : 6}
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          />
+        </div>
 
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={editingUser ? "Leave blank to keep current password" : "At least 6 characters"}
-          required={!editingUser}
-          minLength={editingUser ? undefined : 6}
-          className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Phone
+          </label>
 
-      {/* Phone */}
-      <div>
-        <label className="block text-sm text-gray-600 mb-1">
-          Phone
-        </label>
+          <input
+            type="text"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            placeholder="Enter phone number"
+            list="user-phone-suggestions"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          />
+          <datalist id="user-phone-suggestions">
+            {phoneSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
 
-        <input
-          type="text"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="Enter phone number"
-          list="user-phone-suggestions"
-          className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <datalist id="user-phone-suggestions">
-          {phoneSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-      </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Role
+          </label>
 
-      {/* Role */}
-      <div>
-        <label className="block text-sm text-gray-600 mb-1">
-          Role
-        </label>
+          <select
+            value={role}
+            onChange={(event) => setRole(event.target.value as "ADMIN" | "MEMBER")}
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          >
+            <option value="ADMIN">ADMIN</option>
+            <option value="MEMBER">MEMBER</option>
+          </select>
+        </div>
 
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as "ADMIN" | "MEMBER")}
-          className="w-full border border-gray-300 bg-white px-3 py-2 rounded-lg text-gray-700 shadow-sm outline-none transition-all hover:border-[#162a52] focus:border-[#0f1f3d] focus:ring-2 focus:ring-[#0f1f3d]"
-        >
-          <option value="ADMIN">ADMIN</option>
-          <option value="MEMBER">MEMBER</option>
-        </select>
-      </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Status
+          </label>
 
-      {/* Status */}
-      <div>
-        <label className="block text-sm text-gray-600 mb-1">
-          Status
-        </label>
-
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as "ACTIVE" | "INACTIVE" | "BLOCKED")}
-          className="w-full border border-gray-300 bg-white px-3 py-2 rounded-lg text-gray-700 shadow-sm outline-none transition-all hover:border-[#162a52] focus:border-[#0f1f3d] focus:ring-2 focus:ring-[#0f1f3d]"
-        >
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="INACTIVE">INACTIVE</option>
-          <option value="BLOCKED">BLOCKED</option>
-        </select>
+          <select
+            value={status}
+            onChange={(event) => setStatus(event.target.value as "ACTIVE" | "INACTIVE" | "BLOCKED")}
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+          >
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+            <option value="BLOCKED">BLOCKED</option>
+          </select>
+        </div>
       </div>
 
       {error && (
@@ -273,14 +267,12 @@ export default function AddUserForm({ onClose, onCreated, editingUser }: Props) 
         </p>
       )}
 
-      {/* Buttons */}
-      <div className={responsive.formActions}>
-
+      <div className="flex items-center justify-end gap-2 pt-1">
         <button
           type="button"
           onClick={onClose}
           disabled={loading}
-          className="border px-4 py-2 rounded-lg"
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-70"
         >
           Cancel
         </button>
@@ -288,16 +280,14 @@ export default function AddUserForm({ onClose, onCreated, editingUser }: Props) 
         <button
           type="submit"
           disabled={loading}
-          className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52] disabled:opacity-70"
+          className="rounded-lg bg-[#0f1f3d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#162a52] disabled:opacity-70"
         >
           {loading
             ? editingUser ? "Updating..." : "Creating..."
             : editingUser ? "Update User" : "Create User"
           }
         </button>
-
       </div>
-
     </form>
   )
 }

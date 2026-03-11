@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Download, FileText, Layers3, Plus, Search } from "lucide-react"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import Table from "../../components/ui/Table/Table"
@@ -12,6 +13,7 @@ import { toErrorMessage } from "../../utils/api"
 import { formatDate } from "../../utils/formatters"
 import { downloadCsv, printTableAsPdf } from "../../utils/exporters"
 import useDebouncedValue from "../../hooks/useDebouncedValue"
+import pageStyles from "../../styles/adminPage.module.css"
 
 type LoanFilter = "ALL" | "ISSUED" | "RETURNED" | "OVERDUE"
 
@@ -173,7 +175,7 @@ export default function LoansPage() {
 
   useEffect(() => {
     void loadLoans()
-  }, [page, filter, debouncedSearch])
+  }, [page, filter, debouncedSearch, toast]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReturn = async (loanId: number) => {
     try {
@@ -252,14 +254,14 @@ export default function LoansPage() {
         const loan = row as LoanRow
 
         if (loan.rawStatus !== "ISSUED") {
-          return <span className="text-sm text-gray-400">No action</span>
+          return <span className="text-xs text-slate-400">No action</span>
         }
 
         return (
           <button
             type="button"
             onClick={() => setReturnId(loan.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className={pageStyles.actionLink}
           >
             Return Book
           </button>
@@ -268,159 +270,164 @@ export default function LoansPage() {
     }
   ]
 
+  const issuedCount = loans.filter((loan) => loan.status === "ISSUED").length
+  const overdueCount = loans.filter((loan) => loan.status === "OVERDUE").length
+  const returnedCount = loans.filter((loan) => loan.status === "RETURNED").length
+
   return (
     <DashboardLayout>
+      <div className={pageStyles.page}>
 
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-8">
+        <section className={pageStyles.hero}>
+          <div className={pageStyles.heroContent}>
+            <p className={pageStyles.heroEyebrow}>Circulation Desk</p>
+            <h1 className={pageStyles.heroTitle}>Loans</h1>
+            <p className={pageStyles.heroSubtitle}>
+              Monitor active borrowing, overdue risk, and return activity in one workflow.
+            </p>
+          </div>
 
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Loans
-          </h1>
-
-          <p className="text-gray-500">
-            Manage book loans
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              void handleExportCsv()
-            }}
-            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
-          >
-            Export CSV
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              void handleExportPdf()
-            }}
-            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
-          >
-            Export PDF
-          </button>
-          <button
-            onClick={() => setOpenModal(true)}
-            className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52]"
-          >
-            + Issue Book
-          </button>
-        </div>
-
-      </div>
-
-      {/* Status Filters */}
-      <div className="flex gap-3 mb-6">
-
-        {(["ALL", "ISSUED", "RETURNED", "OVERDUE"] as LoanFilter[]).map((item) => (
-
-          <button
-            key={item}
-            onClick={() => {
-              setPage(0)
-              setFilter(item)
-            }}
-            className={`px-4 py-2 rounded-lg text-sm border
-              ${filter === item
-                ? "bg-[#0f1f3d] text-white"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-          >
-            {item}
-          </button>
-
-        ))}
-
-      </div>
-
-      <div className="mb-6">
-        <input
-          value={search}
-          onChange={(event) => {
-            setPage(0)
-            setSearch(event.target.value)
-          }}
-          placeholder="Search by user, book, barcode, status..."
-          className="border px-4 py-2 rounded-lg w-80 outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading loans...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {/* Table */}
-      <Table columns={columns} data={loans} />
-
-      <div className="mt-6 flex items-center justify-between">
-        <button
-          onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-          disabled={page === 0}
-          className="border px-3 py-2 rounded-lg disabled:opacity-50"
-        >
-          Previous
-        </button>
-
-        <div className="flex gap-2">
-          {Array.from({ length: totalPages }, (_, index) => (
+          <div className={pageStyles.heroActions}>
             <button
-              key={index}
-              onClick={() => setPage(index)}
-              className={`px-3 py-1 rounded-lg border ${
-                page === index ? "bg-[#0f1f3d] text-white" : "bg-white"
-              }`}
+              type="button"
+              onClick={() => {
+                void handleExportCsv()
+              }}
+              className={pageStyles.primaryButton}
             >
-              {index + 1}
+              <Download size={15} />
+              Export CSV
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => {
+                void handleExportPdf()
+              }}
+              className={pageStyles.primaryButton}
+            >
+              <FileText size={15} />
+              Export PDF
+            </button>
+            <button
+              onClick={() => setOpenModal(true)}
+              className={pageStyles.primaryButton}
+            >
+              <Plus size={16} />
+              Issue Book
+            </button>
+          </div>
+        </section>
+
+        <section className={pageStyles.controlsCard}>
+          <div className={pageStyles.controlsTopRow}>
+            <div className={pageStyles.searchWrap}>
+              <Search size={16} className={pageStyles.searchIcon} />
+              <input
+                value={search}
+                onChange={(event) => {
+                  setPage(0)
+                  setSearch(event.target.value)
+                }}
+                placeholder="Search by user, book, barcode, status..."
+                className={pageStyles.searchInput}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className={pageStyles.metaChip}>
+                <Layers3 size={13} />
+                Showing {loans.length}
+              </span>
+              <span className={pageStyles.metaChip}>Issued {issuedCount}</span>
+              <span className={pageStyles.metaChip}>Overdue {overdueCount}</span>
+              <span className={pageStyles.metaChip}>Returned {returnedCount}</span>
+            </div>
+          </div>
+
+          <div className={pageStyles.chipRow}>
+            {(["ALL", "ISSUED", "RETURNED", "OVERDUE"] as LoanFilter[]).map((item) => (
+              <button
+                key={item}
+                onClick={() => {
+                  setPage(0)
+                  setFilter(item)
+                }}
+                className={`${pageStyles.chipButton} ${filter === item ? pageStyles.chipButtonActive : ""}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {loading && (
+          <p className={pageStyles.infoText}>Loading loans...</p>
+        )}
+
+        {error && (
+          <p className={pageStyles.errorText}>{error}</p>
+        )}
+
+        <div className={pageStyles.tableSurface}>
+          <Table columns={columns} data={loans} />
         </div>
 
-        <button
-          onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-          disabled={totalPages === 0 || page >= totalPages - 1}
-          className="border px-3 py-2 rounded-lg disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+        <div className={pageStyles.pagination}>
+          <button
+            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+            disabled={page === 0}
+            className={pageStyles.pageNavButton}
+          >
+            Previous
+          </button>
 
-      {/* Issue Loan Modal */}
-      {openModal && (
-        <Modal onClose={() => setOpenModal(false)}>
+          <div className={pageStyles.pageNumbers}>
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => setPage(index)}
+                className={`${pageStyles.pageNumber} ${page === index ? pageStyles.pageNumberActive : ""}`}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
 
-          <h2 className="text-lg font-semibold mb-6">
-            Issue Book
-          </h2>
+          <button
+            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+            disabled={totalPages === 0 || page >= totalPages - 1}
+            className={pageStyles.pageNavButton}
+          >
+            Next
+          </button>
+        </div>
 
-          <IssueLoanForm
-            onClose={() => setOpenModal(false)}
-            onCreated={loadLoans}
+        {openModal && (
+          <Modal onClose={() => setOpenModal(false)}>
+            <h2 className={pageStyles.modalTitle}>
+              Issue Book
+            </h2>
+
+            <IssueLoanForm
+              onClose={() => setOpenModal(false)}
+              onCreated={loadLoans}
+            />
+          </Modal>
+        )}
+
+        {returnId !== null && (
+          <ConfirmModal
+            title="Return Book"
+            message="Are you sure you want to mark this loan as returned?"
+            confirmText="Return"
+            cancelText="Cancel"
+            onCancel={() => setReturnId(null)}
+            onConfirm={() => {
+              void handleReturn(returnId)
+            }}
           />
-
-        </Modal>
-      )}
-
-      {returnId !== null && (
-        <ConfirmModal
-          title="Return Book"
-          message="Are you sure you want to mark this loan as returned?"
-          confirmText="Return"
-          cancelText="Cancel"
-          onCancel={() => setReturnId(null)}
-          onConfirm={() => {
-            void handleReturn(returnId)
-          }}
-        />
-      )}
-
+        )}
+      </div>
     </DashboardLayout>
   )
 }

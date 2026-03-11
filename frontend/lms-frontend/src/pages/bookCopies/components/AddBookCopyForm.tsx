@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 
 import { createBookCopy, getBookCopies, getBooks } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
-import responsive from "../../../styles/responsive.module.css"
 
 type Props = {
   onClose: () => void
@@ -104,55 +103,62 @@ export default function AddBookCopyForm({ onClose, onCreated }: Props) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Book ID
+          </label>
+          <input
+            value={bookId}
+            onChange={(e) => setBookId(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+            placeholder="Enter book id"
+            list="copy-book-id-suggestions"
+            required
+          />
+          <datalist id="copy-book-id-suggestions">
+            {bookIdSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
 
-      <div>
-        <label className="text-sm text-gray-600">Book ID</label>
-        <input
-          value={bookId}
-          onChange={(e) => setBookId(e.target.value)}
-          className="border rounded-lg px-3 py-2 w-full"
-          placeholder="Enter book id"
-          list="copy-book-id-suggestions"
-          required
-        />
-        <datalist id="copy-book-id-suggestions">
-          {bookIdSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-      </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Barcode
+          </label>
+          <input
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+            placeholder="Enter barcode"
+            list="copy-barcode-suggestions"
+            required
+          />
+          <datalist id="copy-barcode-suggestions">
+            {barcodeSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
 
-      <div>
-        <label className="text-sm text-gray-600">Barcode</label>
-        <input
-          value={barcode}
-          onChange={(e) => setBarcode(e.target.value)}
-          className="border rounded-lg px-3 py-2 w-full"
-          placeholder="Enter barcode"
-          list="copy-barcode-suggestions"
-          required
-        />
-        <datalist id="copy-barcode-suggestions">
-          {barcodeSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-      </div>
-
-      <div>
-        <label className="text-sm text-gray-600">Rack Location</label>
-        <input
-          value={rackLocation}
-          onChange={(e) => setRackLocation(e.target.value)}
-          className="border rounded-lg px-3 py-2 w-full"
-          placeholder="Enter rack location"
-          list="copy-rack-location-suggestions"
-        />
-        <datalist id="copy-rack-location-suggestions">
-          {rackLocationSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
+        <div className="md:col-span-2">
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Rack Location
+          </label>
+          <input
+            value={rackLocation}
+            onChange={(e) => setRackLocation(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+            placeholder="Enter rack location (optional)"
+            list="copy-rack-location-suggestions"
+          />
+          <datalist id="copy-rack-location-suggestions">
+            {rackLocationSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
       </div>
 
       {error && (
@@ -161,12 +167,12 @@ export default function AddBookCopyForm({ onClose, onCreated }: Props) {
         </p>
       )}
 
-      <div className={responsive.formActions}>
+      <div className="flex items-center justify-end gap-2 pt-1">
         <button
           type="button"
           onClick={onClose}
           disabled={loading}
-          className="border px-4 py-2 rounded"
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-70"
         >
           Cancel
         </button>
@@ -174,12 +180,11 @@ export default function AddBookCopyForm({ onClose, onCreated }: Props) {
         <button
           type="submit"
           disabled={loading}
-          className="bg-[#0f1f3d] text-white px-4 py-2 rounded disabled:opacity-70"
+          className="rounded-lg bg-[#0f1f3d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#162a52] disabled:opacity-70"
         >
           {loading ? "Adding..." : "Add Copy"}
         </button>
       </div>
-
     </form>
   )
 }

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 
 import { createReservation, getBooks, getUsers } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
-import responsive from "../../../styles/responsive.module.css"
 
 type Props = {
   onClose: () => void
@@ -57,8 +56,8 @@ export default function AddReservationForm({ onClose, onCreated, defaultUserId }
     }
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
 
     const parsedUserId = Number(userId)
     const parsedBookId = Number(bookId)
@@ -96,64 +95,63 @@ export default function AddReservationForm({ onClose, onCreated, defaultUserId }
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="grid gap-4 md:grid-cols-2">
+        {defaultUserId ? (
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              User ID
+            </label>
 
-      {/* User */}
-      {defaultUserId ? (
+            <input
+              type="text"
+              value={userId}
+              readOnly
+              className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500"
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              User ID
+            </label>
+
+            <input
+              type="text"
+              value={userId}
+              onChange={(event) => setUserId(event.target.value)}
+              placeholder="Enter user ID"
+              list="reservation-user-id-suggestions"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+              required
+            />
+            <datalist id="reservation-user-id-suggestions">
+              {userIdSuggestions.map((suggestion) => (
+                <option key={suggestion} value={suggestion} />
+              ))}
+            </datalist>
+          </div>
+        )}
+
         <div>
-          <label className="block text-sm text-gray-600 mb-1">
-            User ID
+          <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Book ID
           </label>
 
           <input
             type="text"
-            value={userId}
-            readOnly
-            className="border px-3 py-2 rounded-lg w-full bg-gray-100 text-gray-600"
-          />
-        </div>
-      ) : (
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">
-            User ID
-          </label>
-
-          <input
-            type="text"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            placeholder="Enter user ID"
-            list="reservation-user-id-suggestions"
-            className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
+            value={bookId}
+            onChange={(event) => setBookId(event.target.value)}
+            placeholder="Enter book ID"
+            list="reservation-book-id-suggestions"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
             required
           />
-          <datalist id="reservation-user-id-suggestions">
-            {userIdSuggestions.map((suggestion) => (
+          <datalist id="reservation-book-id-suggestions">
+            {bookIdSuggestions.map((suggestion) => (
               <option key={suggestion} value={suggestion} />
             ))}
           </datalist>
         </div>
-      )}
-
-      {/* Book */}
-      <div>
-        <label className="block text-sm text-gray-600 mb-1">
-          Book ID
-        </label>
-
-        <input
-          type="text"
-          value={bookId}
-          onChange={(e) => setBookId(e.target.value)}
-          placeholder="Enter book ID"
-          list="reservation-book-id-suggestions"
-          className="border px-3 py-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-        <datalist id="reservation-book-id-suggestions">
-          {bookIdSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
       </div>
 
       {error && (
@@ -162,14 +160,12 @@ export default function AddReservationForm({ onClose, onCreated, defaultUserId }
         </p>
       )}
 
-      {/* Buttons */}
-      <div className={responsive.formActions}>
-
+      <div className="flex items-center justify-end gap-2 pt-1">
         <button
           type="button"
           onClick={onClose}
           disabled={loading}
-          className="border px-4 py-2 rounded-lg"
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-70"
         >
           Cancel
         </button>
@@ -177,13 +173,11 @@ export default function AddReservationForm({ onClose, onCreated, defaultUserId }
         <button
           type="submit"
           disabled={loading}
-          className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52] disabled:opacity-70"
+          className="rounded-lg bg-[#0f1f3d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#162a52] disabled:opacity-70"
         >
           {loading ? "Creating..." : "Create Reservation"}
         </button>
-
       </div>
-
     </form>
   )
 }

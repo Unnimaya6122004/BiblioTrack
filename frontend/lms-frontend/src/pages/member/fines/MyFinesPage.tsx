@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { AlertTriangle, Wallet } from "lucide-react"
 
 import MemberLayout from "../../../components/layout/MemberLayout"
 import Table from "../../../components/ui/Table/Table"
@@ -7,10 +8,12 @@ import { getFines, payFine, type FineDto } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
 import { formatCurrency, formatDate } from "../../../utils/formatters"
 import { getLoggedInUser } from "../../../utils/currentUser"
+import styles from "../MemberPages.module.css"
 
 type FineRow = {
   id: number
   loanId: number
+  amountValue: number
   amount: string
   issued: string
   paid: string
@@ -51,14 +54,19 @@ export default function MyFinesPage() {
       const myFines = response.content.filter((fine: FineDto) => fine.userId === userId)
 
       setFines(
-        myFines.map((fine) => ({
-          id: fine.id,
-          loanId: fine.loanId,
-          amount: formatCurrency(fine.amount),
-          issued: formatDate(fine.issuedDate),
-          paid: formatDate(fine.paidDate),
-          status: fine.status
-        }))
+        myFines.map((fine) => {
+          const parsedAmount = Number(fine.amount)
+
+          return {
+            id: fine.id,
+            loanId: fine.loanId,
+            amountValue: Number.isFinite(parsedAmount) ? parsedAmount : 0,
+            amount: formatCurrency(fine.amount),
+            issued: formatDate(fine.issuedDate),
+            paid: formatDate(fine.paidDate),
+            status: fine.status
+          }
+        })
       )
     } catch (requestError) {
       setError(toErrorMessage(requestError, "Failed to load your fines"))
@@ -104,7 +112,7 @@ export default function MyFinesPage() {
         const fine = row as FineRow
 
         if (fine.status !== "UNPAID") {
-          return <span className="text-sm text-gray-400">No action</span>
+          return <span className={styles.mutedActionText}>No action</span>
         }
 
         return (
@@ -113,7 +121,7 @@ export default function MyFinesPage() {
               setSelectedFine(fine)
               setOpenModal(true)
             }}
-            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+            className={styles.primaryButton}
           >
             Pay Fine
           </button>
@@ -121,72 +129,86 @@ export default function MyFinesPage() {
       }
     }
   ]
+  const unpaidFines = fines.filter((fine) => fine.status === "UNPAID")
+  const unpaidTotal = unpaidFines.reduce((total, fine) => total + fine.amountValue, 0)
 
   return (
     <MemberLayout>
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold">
-          My Fines
-        </h1>
-
-        <p className="text-gray-500">
-          View your overdue fines
-        </p>
-      </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading your fines...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      {/* Table */}
-      <Table columns={columns} data={fines} />
-
-      {/* Payment Modal */}
-      {openModal && selectedFine && (
-        <Modal onClose={() => setOpenModal(false)}>
-
-          <div className="text-center">
-
-            <h2 className="text-xl font-semibold mb-4">
-              Pay Fine
-            </h2>
-
-            <p className="text-gray-500 mb-6">
-              Confirm payment for this fine.
+      <div className={styles.page}>
+        <section className={styles.heroCard}>
+          <div className={styles.heroContent}>
+            <p className={styles.eyebrow}>Member Billing</p>
+            <h1 className={styles.heroTitle}>My Fines</h1>
+            <p className={styles.heroDescription}>
+              Review unpaid fines and settle pending amounts quickly.
             </p>
 
-            <p className="text-lg font-semibold mb-6">
-              Amount: {selectedFine.amount}
-            </p>
+            <div className={styles.heroMetaRow}>
+              <span className={styles.heroMetaPill}>
+                <AlertTriangle size={14} />
+                Unpaid {unpaidFines.length}
+              </span>
+              <span className={styles.heroMetaPill}>
+                <Wallet size={14} />
+                {formatCurrency(unpaidTotal)}
+              </span>
+            </div>
+          </div>
+        </section>
 
-            <div className="flex justify-center gap-3">
-              <button
-                onClick={() => setOpenModal(false)}
-                disabled={paying}
-                className="border px-4 py-2 rounded-lg"
-              >
-                Close
-              </button>
+        {loading && (
+          <p className={`${styles.stateMessage} ${styles.stateInfo}`}>Loading your fines...</p>
+        )}
 
-              <button
-                onClick={() => void handlePayFine()}
-                disabled={paying}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-70"
-              >
-                {paying ? "Paying..." : "Confirm Pay"}
-              </button>
+        {error && (
+          <p className={`${styles.stateMessage} ${styles.stateError}`}>{error}</p>
+        )}
+
+        <section className={styles.tableSection}>
+          <Table columns={columns} data={fines} />
+        </section>
+
+        {openModal && selectedFine && (
+          <Modal onClose={() => setOpenModal(false)}>
+
+            <div className="text-center">
+
+              <h2 className={styles.modalTitle}>
+                Pay Fine
+              </h2>
+
+              <p className={styles.modalDescription}>
+                Confirm payment for this fine.
+              </p>
+
+              <p className={styles.modalAmount}>
+                Amount: {selectedFine.amount}
+              </p>
+
+              <div className={styles.modalActions}>
+                <button
+                  onClick={() => setOpenModal(false)}
+                  disabled={paying}
+                  className={styles.modalSecondaryButton}
+                >
+                  Close
+                </button>
+
+                <button
+                  onClick={() => void handlePayFine()}
+                  disabled={paying}
+                  className={styles.modalPrimaryButton}
+                >
+                  {paying ? "Paying..." : "Confirm Pay"}
+                </button>
+              </div>
+
             </div>
 
-          </div>
-
-        </Modal>
-      )}
+          </Modal>
+        )}
+      </div>
 
     </MemberLayout>
   )

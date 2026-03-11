@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { BookOpen, CircleAlert, Repeat } from "lucide-react"
 
 import MemberLayout from "../../../components/layout/MemberLayout"
 import Table from "../../../components/ui/Table/Table"
@@ -6,6 +7,7 @@ import { getLoans, type LoanDto } from "../../../api/lmsApi"
 import { toErrorMessage } from "../../../api/client"
 import { formatDate } from "../../../utils/formatters"
 import { getLoggedInUser } from "../../../utils/currentUser"
+import styles from "../MemberPages.module.css"
 
 type LoanRow = {
   id: number
@@ -89,29 +91,50 @@ export default function MyLoansPage() {
     { header: "Returned", accessor: "returned" },
     { header: "Status", accessor: "status" }
   ]
+  const activeCount = loans.filter((loan) => loan.status === "ISSUED").length
+  const overdueCount = loans.filter((loan) => loan.status === "OVERDUE").length
 
   return (
     <MemberLayout>
 
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold">
-          My Loans
-        </h1>
+      <div className={styles.page}>
+        <section className={styles.heroCard}>
+          <div className={styles.heroContent}>
+            <p className={styles.eyebrow}>Member Circulation</p>
+            <h1 className={styles.heroTitle}>My Loans</h1>
+            <p className={styles.heroDescription}>
+              Monitor due dates and return status for all borrowed books.
+            </p>
 
-        <p className="text-gray-500">
-          View books you have borrowed
-        </p>
+            <div className={styles.heroMetaRow}>
+              <span className={styles.heroMetaPill}>
+                <Repeat size={14} />
+                Active {activeCount}
+              </span>
+              <span className={styles.heroMetaPill}>
+                <CircleAlert size={14} />
+                Overdue {overdueCount}
+              </span>
+              <span className={styles.heroMetaPill}>
+                <BookOpen size={14} />
+                Total {loans.length}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {loading && (
+          <p className={`${styles.stateMessage} ${styles.stateInfo}`}>Loading your loans...</p>
+        )}
+
+        {error && (
+          <p className={`${styles.stateMessage} ${styles.stateError}`}>{error}</p>
+        )}
+
+        <section className={styles.tableSection}>
+          <Table columns={columns} data={loans} />
+        </section>
       </div>
-
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading your loans...</p>
-      )}
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
-
-      <Table columns={columns} data={loans} />
 
     </MemberLayout>
   )

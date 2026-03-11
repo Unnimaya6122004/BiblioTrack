@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { CalendarCheck, CheckCircle2 } from "lucide-react"
 
 import MemberLayout from "../../../components/layout/MemberLayout"
 import Table from "../../../components/ui/Table/Table"
@@ -14,6 +15,7 @@ import {
 import { toErrorMessage } from "../../../api/client"
 import { formatDate } from "../../../utils/formatters"
 import { getLoggedInUser } from "../../../utils/currentUser"
+import styles from "../MemberPages.module.css"
 
 type ReservationRow = {
   id: number
@@ -98,14 +100,14 @@ export default function MyReservationsPage() {
         const reservation = row as ReservationRow
 
         if (reservation.status !== "ACTIVE") {
-          return <span className="text-sm text-gray-400">No action</span>
+          return <span className={styles.mutedActionText}>No action</span>
         }
 
         return (
           <button
             type="button"
             onClick={() => setCancelId(reservation.id)}
-            className="text-red-500 hover:text-red-700 text-sm font-medium"
+            className={styles.dangerTextAction}
           >
             Cancel
           </button>
@@ -113,73 +115,86 @@ export default function MyReservationsPage() {
       }
     }
   ]
+  const activeCount = reservations.filter((reservation) => reservation.status === "ACTIVE").length
 
   return (
     <MemberLayout>
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className={styles.page}>
+        <section className={styles.heroCard}>
+          <div className={styles.heroContent}>
+            <p className={styles.eyebrow}>Member Queue</p>
+            <h1 className={styles.heroTitle}>My Reservations</h1>
+            <p className={styles.heroDescription}>
+              Track reserved books and manage active reservation requests.
+            </p>
 
-        <div>
-          <h1 className="text-2xl font-semibold">
-            My Reservations
-          </h1>
+            <div className={styles.heroMetaRow}>
+              <span className={styles.heroMetaPill}>
+                <CalendarCheck size={14} />
+                Active {activeCount}
+              </span>
+              <span className={styles.heroMetaPill}>
+                <CheckCircle2 size={14} />
+                Total {reservations.length}
+              </span>
+            </div>
+          </div>
+        </section>
 
-          <p className="text-gray-500">
-            View books you have reserved
-          </p>
+        <div className={styles.toolbarRow}>
+          <div />
+          <button
+            onClick={() => setOpenModal(true)}
+            className={styles.primaryButton}
+          >
+            + New Reservation
+          </button>
         </div>
 
-        {/* New Reservation Button */}
-        <button
-          onClick={() => setOpenModal(true)}
-          className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52]"
-        >
-          + New Reservation
-        </button>
+        {loading && (
+          <p className={`${styles.stateMessage} ${styles.stateInfo}`}>
+            Loading your reservations...
+          </p>
+        )}
 
-      </div>
+        {error && (
+          <p className={`${styles.stateMessage} ${styles.stateError}`}>{error}</p>
+        )}
 
-      {loading && (
-        <p className="mb-4 text-sm text-gray-500">Loading your reservations...</p>
-      )}
+        <section className={styles.tableSection}>
+          <Table columns={columns} data={reservations} />
+        </section>
 
-      {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-      )}
+        {openModal && (
+          <Modal onClose={() => setOpenModal(false)}>
 
-      {/* Table */}
-      <Table columns={columns} data={reservations} />
+            <h2 className={styles.modalTitle}>
+              New Reservation
+            </h2>
 
-      {/* Modal */}
-      {openModal && (
-        <Modal onClose={() => setOpenModal(false)}>
+            <AddReservationForm
+              onClose={() => setOpenModal(false)}
+              defaultUserId={currentUserId}
+              onCreated={() => loadMyReservations(currentUserId ?? undefined)}
+            />
 
-          <h2 className="text-lg font-semibold mb-6">
-            New Reservation
-          </h2>
+          </Modal>
+        )}
 
-          <AddReservationForm
-            onClose={() => setOpenModal(false)}
-            defaultUserId={currentUserId}
-            onCreated={() => loadMyReservations(currentUserId ?? undefined)}
+        {cancelId !== null && (
+          <ConfirmModal
+            title="Cancel Reservation"
+            message="Are you sure you want to cancel this reservation?"
+            confirmText="Cancel Reservation"
+            cancelText="Keep"
+            onCancel={() => setCancelId(null)}
+            onConfirm={() => {
+              void handleCancel(cancelId)
+            }}
           />
-
-        </Modal>
-      )}
-
-      {cancelId !== null && (
-        <ConfirmModal
-          title="Cancel Reservation"
-          message="Are you sure you want to cancel this reservation?"
-          confirmText="Cancel Reservation"
-          cancelText="Keep"
-          onCancel={() => setCancelId(null)}
-          onConfirm={() => {
-            void handleCancel(cancelId)
-          }}
-        />
-      )}
+        )}
+      </div>
 
     </MemberLayout>
   )
