@@ -8,13 +8,13 @@
   position: relative;
   overflow: hidden;
   border-radius: 1rem;
-  border: 1px solid #1e3a8a;
+  border: 1px solid #374151;
   padding: 1rem;
   background: linear-gradient(
-    135deg,
+    90deg,
     #0f1f3d 0%,
-    #1e40af 55%,
-    #0f766e 115%
+    #0c1a33 50%,
+    #08152b 100%
   );
   color: #ffffff;
   display: grid;
@@ -114,7 +114,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #bfdbfe, #ffffff);
+  background: linear-gradient(90deg, #bfdbfe, #e0f2fe);
 }
 
 .infoMessage {
@@ -164,7 +164,7 @@
   left: 0;
   width: 100%;
   height: 0.18rem;
-  background: linear-gradient(90deg, #0ea5e9, #6366f1, #06b6d4);
+  background: linear-gradient(90deg, #1e293b, #2563eb, #38bdf8);
 }
 
 .analyticsTitle {
@@ -235,7 +235,7 @@
 }
 
 .booksProgress {
-  background: linear-gradient(90deg, #0ea5e9, #0284c7);
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
 }
 
 .defaulterProgress {
