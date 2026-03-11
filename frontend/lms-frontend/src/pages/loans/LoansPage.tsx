@@ -4,11 +4,14 @@ import DashboardLayout from "../../components/layout/DashboardLayout"
 import Table from "../../components/ui/Table/Table"
 import Modal from "../../components/ui/Modal/Modal"
 import ConfirmModal from "../../components/ui/Modal/ConfirmModal"
+import { useToast } from "../../components/ui/Toast/ToastProvider"
 
 import IssueLoanForm from "./components/IssueLoanForm"
 import { getLoans, returnLoan, type LoanDto } from "../../api/lmsApi"
 import { toErrorMessage } from "../../utils/api"
 import { formatDate } from "../../utils/formatters"
+import { downloadCsv, printTableAsPdf } from "../../utils/exporters"
+import useDebouncedValue from "../../hooks/useDebouncedValue"
 
 type LoanFilter = "ALL" | "ISSUED" | "RETURNED" | "OVERDUE"
 
@@ -40,46 +43,114 @@ function isOverdue(loan: LoanDto): boolean {
   return dueDate < today
 }
 
+function mapLoanToRow(loan: LoanDto): LoanRow {
+  return {
+    id: loan.id,
+    user: loan.userName,
+    book: loan.bookTitle,
+    barcode: loan.barcode,
+    issued: formatDate(loan.issueDate),
+    due: formatDate(loan.dueDate),
+    returned: formatDate(loan.returnDate),
+    status: isOverdue(loan) ? "OVERDUE" : loan.status,
+    rawStatus: loan.status
+  }
+}
+
 export default function LoansPage() {
+  const PAGE_SIZE = 10
 
   const [openModal, setOpenModal] = useState(false)
   const [filter, setFilter] = useState<LoanFilter>("ALL")
+  const [search, setSearch] = useState("")
   const [loans, setLoans] = useState<LoanRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [returnId, setReturnId] = useState<number | null>(null)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
+  const toast = useToast()
+  const debouncedSearch = useDebouncedValue(search)
+
+  const resolveStatusQuery = () => (
+    filter === "ISSUED" || filter === "RETURNED"
+      ? filter
+      : filter === "OVERDUE"
+        ? "ISSUED"
+        : undefined
+  )
+
+  const fetchAllRowsForExport = async () => {
+    const statusQuery = resolveStatusQuery()
+    const allLoans: LoanDto[] = []
+    let pageIndex = 0
+
+    while (true) {
+      const response = await getLoans({
+        status: statusQuery,
+        page: pageIndex,
+        size: 200
+      })
+
+      allLoans.push(...response.content)
+
+      if (response.last) {
+        break
+      }
+
+      pageIndex += 1
+    }
+
+    const mapped = allLoans.map(mapLoanToRow).sort((a, b) => a.id - b.id)
+    return filter === "OVERDUE"
+      ? mapped.filter((loan) => loan.status === "OVERDUE")
+      : mapped
+  }
+
+  const filterRowsBySearch = (rows: LoanRow[], normalizedSearch: string) => {
+    if (!normalizedSearch) {
+      return rows
+    }
+
+    return rows.filter((loan) =>
+      String(loan.id).includes(normalizedSearch) ||
+      loan.user.toLowerCase().includes(normalizedSearch) ||
+      loan.book.toLowerCase().includes(normalizedSearch) ||
+      loan.barcode.toLowerCase().includes(normalizedSearch) ||
+      loan.status.toLowerCase().includes(normalizedSearch) ||
+      loan.issued.toLowerCase().includes(normalizedSearch) ||
+      loan.due.toLowerCase().includes(normalizedSearch) ||
+      loan.returned.toLowerCase().includes(normalizedSearch)
+    )
+  }
 
   const loadLoans = async () => {
     try {
       setLoading(true)
       setError("")
+      const normalizedSearch = debouncedSearch.trim().toLowerCase()
 
-      const statusQuery = filter === "ISSUED" || filter === "RETURNED"
-        ? filter
-        : filter === "OVERDUE"
-          ? "ISSUED"
-          : undefined
+      if (normalizedSearch) {
+        const allRows = await fetchAllRowsForExport()
+        const filteredRows = filterRowsBySearch(allRows, normalizedSearch)
+        const start = page * PAGE_SIZE
+        const end = start + PAGE_SIZE
+
+        setLoans(filteredRows.slice(start, end))
+        setTotalPages(Math.ceil(filteredRows.length / PAGE_SIZE))
+        return
+      }
+
+      const statusQuery = resolveStatusQuery()
 
       const response = await getLoans({
         status: statusQuery,
         page,
-        size: 10
+        size: PAGE_SIZE
       })
 
       const mappedLoans = response.content
-        .map((loan: LoanDto) => ({
-          id: loan.id,
-          user: loan.userName,
-          book: loan.bookTitle,
-          barcode: loan.barcode,
-          issued: formatDate(loan.issueDate),
-          due: formatDate(loan.dueDate),
-          returned: formatDate(loan.returnDate),
-          status: isOverdue(loan) ? "OVERDUE" : loan.status,
-          rawStatus: loan.status
-        }))
+        .map(mapLoanToRow)
         .sort((a, b) => a.id - b.id)
 
       if (filter === "OVERDUE") {
@@ -90,7 +161,9 @@ export default function LoansPage() {
 
       setTotalPages(response.totalPages)
     } catch (requestError) {
-      setError(toErrorMessage(requestError, "Failed to load loans"))
+      const message = toErrorMessage(requestError, "Failed to load loans")
+      setError(message)
+      toast.error(message)
       setLoans([])
       setTotalPages(0)
     } finally {
@@ -100,15 +173,66 @@ export default function LoansPage() {
 
   useEffect(() => {
     void loadLoans()
-  }, [page, filter])
+  }, [page, filter, debouncedSearch])
 
   const handleReturn = async (loanId: number) => {
     try {
       await returnLoan(loanId)
       await loadLoans()
       setReturnId(null)
+      toast.success("Loan marked as returned.")
     } catch (requestError) {
-      setError(toErrorMessage(requestError, "Failed to return loan"))
+      const message = toErrorMessage(requestError, "Failed to return loan")
+      setError(message)
+      toast.error(message)
+    }
+  }
+
+  const handleExportCsv = async () => {
+    try {
+      const normalizedSearch = debouncedSearch.trim().toLowerCase()
+      const rows = filterRowsBySearch(await fetchAllRowsForExport(), normalizedSearch)
+      downloadCsv(
+        `loans-${filter.toLowerCase()}.csv`,
+        ["ID", "User", "Book", "Barcode", "Issued", "Due", "Returned", "Status"],
+        rows.map((loan) => [
+          loan.id,
+          loan.user,
+          loan.book,
+          loan.barcode,
+          loan.issued,
+          loan.due,
+          loan.returned,
+          loan.status
+        ])
+      )
+      toast.success("Loans exported to CSV.")
+    } catch (requestError) {
+      toast.error(toErrorMessage(requestError, "Failed to export loans CSV"))
+    }
+  }
+
+  const handleExportPdf = async () => {
+    try {
+      const normalizedSearch = debouncedSearch.trim().toLowerCase()
+      const rows = filterRowsBySearch(await fetchAllRowsForExport(), normalizedSearch)
+      printTableAsPdf({
+        title: `Loans Report (${filter})`,
+        headers: ["ID", "User", "Book", "Barcode", "Issued", "Due", "Returned", "Status"],
+        rows: rows.map((loan) => [
+          loan.id,
+          loan.user,
+          loan.book,
+          loan.barcode,
+          loan.issued,
+          loan.due,
+          loan.returned,
+          loan.status
+        ])
+      })
+      toast.info("Print dialog opened. Save as PDF to download.")
+    } catch (requestError) {
+      toast.error(toErrorMessage(requestError, "Failed to export loans PDF"))
     }
   }
 
@@ -148,7 +272,7 @@ export default function LoansPage() {
     <DashboardLayout>
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-8">
 
         <div>
           <h1 className="text-2xl font-semibold">
@@ -160,12 +284,32 @@ export default function LoansPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setOpenModal(true)}
-          className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52]"
-        >
-          + Issue Book
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              void handleExportCsv()
+            }}
+            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void handleExportPdf()
+            }}
+            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
+          >
+            Export PDF
+          </button>
+          <button
+            onClick={() => setOpenModal(true)}
+            className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52]"
+          >
+            + Issue Book
+          </button>
+        </div>
 
       </div>
 
@@ -191,6 +335,18 @@ export default function LoansPage() {
 
         ))}
 
+      </div>
+
+      <div className="mb-6">
+        <input
+          value={search}
+          onChange={(event) => {
+            setPage(0)
+            setSearch(event.target.value)
+          }}
+          placeholder="Search by user, book, barcode, status..."
+          className="border px-4 py-2 rounded-lg w-80 outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
 
       {loading && (

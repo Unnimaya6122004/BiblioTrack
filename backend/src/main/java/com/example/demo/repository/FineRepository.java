@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,4 +30,16 @@ public interface FineRepository extends JpaRepository<Fine, Integer> {
 
     @Query("select coalesce(sum(f.amount), 0) from Fine f where f.loan.user.id = :userId and f.status = :status")
     BigDecimal sumAmountByUserIdAndStatus(Integer userId, FineStatus status);
+
+    @Query("""
+            select f.loan.user.id, f.loan.user.fullName, coalesce(sum(f.amount), 0)
+            from Fine f
+            where f.status = :status
+            group by f.loan.user.id, f.loan.user.fullName
+            """)
+    List<Object[]> findFineTotalsByUserAndStatus(FineStatus status);
+
+    List<Fine> findByIssuedDateBetween(LocalDate startDate, LocalDate endDate);
+
+    List<Fine> findByPaidDateBetween(LocalDate startDate, LocalDate endDate);
 }

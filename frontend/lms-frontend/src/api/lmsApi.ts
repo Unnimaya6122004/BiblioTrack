@@ -137,6 +137,31 @@ export interface CreateNotificationPayload {
   message: string
 }
 
+export interface TopBookAnalyticsDto {
+  bookId: number
+  bookTitle: string
+  loanCount: number
+}
+
+export interface DefaulterAnalyticsDto {
+  userId: number
+  userName: string
+  overdueLoanCount: number
+  unpaidFineTotal: number
+}
+
+export interface FineTrendPointDto {
+  month: string
+  raisedAmount: number
+  paidAmount: number
+}
+
+export interface AdminAnalyticsDto {
+  topBooks: TopBookAnalyticsDto[]
+  defaulters: DefaulterAnalyticsDto[]
+  fineTrends: FineTrendPointDto[]
+}
+
 export function mapRoleForUi(role: UserRole): "ADMIN" | "MEMBER" {
   if (role === "USER") {
     return "MEMBER"
@@ -404,4 +429,8 @@ export async function markNotificationAsRead(id: number): Promise<NotificationDt
 
 export async function getUnreadNotificationCount(): Promise<number> {
   return apiFetch<number>("/notifications/unread-count")
+}
+
+export async function getAdminAnalytics(): Promise<AdminAnalyticsDto> {
+  return apiFetch<AdminAnalyticsDto>("/analytics/admin")
 }

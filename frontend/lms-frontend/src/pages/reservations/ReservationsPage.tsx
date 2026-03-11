@@ -5,6 +5,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout"
 import Table from "../../components/ui/Table/Table"
 import Modal from "../../components/ui/Modal/Modal"
 import ConfirmModal from "../../components/ui/Modal/ConfirmModal"
+import { useToast } from "../../components/ui/Toast/ToastProvider"
 
 import AddReservationForm from "./components/AddReservationForm"
 import {
@@ -14,6 +15,8 @@ import {
 } from "../../api/lmsApi"
 import { toErrorMessage } from "../../utils/api"
 import { formatDate } from "../../utils/formatters"
+import { downloadCsv, printTableAsPdf } from "../../utils/exporters"
+import useDebouncedValue from "../../hooks/useDebouncedValue"
 
 type ReservationRow = {
   id: number
@@ -30,30 +33,87 @@ export default function ReservationsPage() {
 
   const [openModal, setOpenModal] = useState(false)
   const [reservations, setReservations] = useState<ReservationRow[]>([])
+  const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [cancelId, setCancelId] = useState<number | null>(null)
   const [filter, setFilter] = useState<ReservationFilter>("ALL")
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
+  const toast = useToast()
+  const debouncedSearch = useDebouncedValue(search)
+
+  const fetchAllReservations = async () => {
+    const allReservations: ReservationDto[] = []
+    let pageIndex = 0
+
+    while (true) {
+      const response = await getReservations({ page: pageIndex, size: 200 })
+      allReservations.push(...response.content)
+
+      if (response.last) {
+        break
+      }
+
+      pageIndex += 1
+    }
+
+    return allReservations
+  }
+
+  const mapReservationToRow = (reservation: ReservationDto): ReservationRow => ({
+    id: reservation.id,
+    user: reservation.userName,
+    book: reservation.bookTitle,
+    date: formatDate(reservation.reservationDate),
+    status: reservation.status
+  })
+
+  const filterRowsBySearch = (rows: ReservationRow[], normalizedSearch: string) => {
+    if (!normalizedSearch) {
+      return rows
+    }
+
+    return rows.filter((reservation) =>
+      String(reservation.id).includes(normalizedSearch) ||
+      reservation.user.toLowerCase().includes(normalizedSearch) ||
+      reservation.book.toLowerCase().includes(normalizedSearch) ||
+      reservation.date.toLowerCase().includes(normalizedSearch) ||
+      reservation.status.toLowerCase().includes(normalizedSearch)
+    )
+  }
+
+  const fetchAllRowsForExport = async () => {
+    const allReservations = await fetchAllReservations()
+    let mapped = allReservations
+      .map(mapReservationToRow)
+      .sort((a, b) => a.id - b.id)
+
+    if (filter !== "ALL") {
+      mapped = mapped.filter((reservation) => reservation.status === filter)
+    }
+
+    return filterRowsBySearch(mapped, debouncedSearch.trim().toLowerCase())
+  }
 
   const loadReservations = async () => {
     try {
       setLoading(true)
       setError("")
+      const normalizedSearch = debouncedSearch.trim().toLowerCase()
 
-      if (filter !== "ALL") {
-        const response = await getReservations({ page: 0, size: 200 })
-        const filteredReservations = response.content
-          .map((reservation: ReservationDto) => ({
-            id: reservation.id,
-            user: reservation.userName,
-            book: reservation.bookTitle,
-            date: formatDate(reservation.reservationDate),
-            status: reservation.status
-          }))
+      if (filter !== "ALL" || normalizedSearch) {
+        const allReservations = await fetchAllReservations()
+        let filteredReservations = allReservations
+          .map(mapReservationToRow)
           .sort((a, b) => a.id - b.id)
-          .filter((reservation) => reservation.status === filter)
+
+        if (filter !== "ALL") {
+          filteredReservations = filteredReservations
+            .filter((reservation) => reservation.status === filter)
+        }
+
+        filteredReservations = filterRowsBySearch(filteredReservations, normalizedSearch)
 
         const start = page * PAGE_SIZE
         const end = start + PAGE_SIZE
@@ -65,19 +125,15 @@ export default function ReservationsPage() {
 
       const response = await getReservations({ page, size: PAGE_SIZE })
       const mappedReservations = response.content
-        .map((reservation: ReservationDto) => ({
-          id: reservation.id,
-          user: reservation.userName,
-          book: reservation.bookTitle,
-          date: formatDate(reservation.reservationDate),
-          status: reservation.status
-        }))
+        .map(mapReservationToRow)
         .sort((a, b) => a.id - b.id)
 
       setReservations(mappedReservations)
       setTotalPages(response.totalPages)
     } catch (requestError) {
-      setError(toErrorMessage(requestError, "Failed to load reservations"))
+      const message = toErrorMessage(requestError, "Failed to load reservations")
+      setError(message)
+      toast.error(message)
       setReservations([])
       setTotalPages(0)
     } finally {
@@ -87,15 +143,58 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     void loadReservations()
-  }, [page, filter])
+  }, [page, filter, debouncedSearch])
 
   const handleCancel = async (id: number) => {
     try {
       await cancelReservation(id)
       await loadReservations()
       setCancelId(null)
+      toast.success("Reservation cancelled.")
     } catch (requestError) {
-      setError(toErrorMessage(requestError, "Failed to cancel reservation"))
+      const message = toErrorMessage(requestError, "Failed to cancel reservation")
+      setError(message)
+      toast.error(message)
+    }
+  }
+
+  const handleExportCsv = async () => {
+    try {
+      const rows = await fetchAllRowsForExport()
+      downloadCsv(
+        `reservations-${filter.toLowerCase()}.csv`,
+        ["ID", "User", "Book", "Date", "Status"],
+        rows.map((reservation) => [
+          reservation.id,
+          reservation.user,
+          reservation.book,
+          reservation.date,
+          reservation.status
+        ])
+      )
+      toast.success("Reservations exported to CSV.")
+    } catch (requestError) {
+      toast.error(toErrorMessage(requestError, "Failed to export reservations CSV"))
+    }
+  }
+
+  const handleExportPdf = async () => {
+    try {
+      const rows = await fetchAllRowsForExport()
+      printTableAsPdf({
+        title: `Reservations Report (${filter})`,
+        headers: ["ID", "User", "Book", "Date", "Status"],
+        rows: rows.map((reservation) => [
+          reservation.id,
+          reservation.user,
+          reservation.book,
+          reservation.date,
+          reservation.status
+        ])
+      })
+      toast.info("Print dialog opened. Save as PDF to download.")
+    } catch (requestError) {
+      toast.error(toErrorMessage(requestError, "Failed to export reservations PDF"))
     }
   }
 
@@ -132,7 +231,7 @@ export default function ReservationsPage() {
     <DashboardLayout>
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-8">
 
         <div>
           <h1 className="text-2xl font-semibold">
@@ -144,12 +243,32 @@ export default function ReservationsPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setOpenModal(true)}
-          className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52]"
-        >
-          + New Reservation
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              void handleExportCsv()
+            }}
+            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void handleExportPdf()
+            }}
+            className="border border-slate-300 bg-white px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
+          >
+            Export PDF
+          </button>
+          <button
+            onClick={() => setOpenModal(true)}
+            className="bg-[#0f1f3d] text-white px-4 py-2 rounded-lg hover:bg-[#162a52]"
+          >
+            + New Reservation
+          </button>
+        </div>
 
       </div>
 
@@ -171,6 +290,18 @@ export default function ReservationsPage() {
             {item}
           </button>
         ))}
+      </div>
+
+      <div className="mb-6">
+        <input
+          value={search}
+          onChange={(event) => {
+            setPage(0)
+            setSearch(event.target.value)
+          }}
+          placeholder="Search by user, book, status..."
+          className="border px-4 py-2 rounded-lg w-80 outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
 
       {loading && (
